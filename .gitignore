@@ -5,6 +5,8 @@
 *Key*.txt
 *key*.txt
 *.pem
+# 루트의 메모·키 txt 파일 (cloudflare, OpenAI 등)
+/*.txt
 
 # 의존성·빌드
 node_modules/
