@@ -33,6 +33,6 @@ export function describeAIError(err: unknown) {
 }
 
 export async function embed(text: string): Promise<number[]> {
-  const res = await openai().embeddings.create({ model: EMBEDDING_MODEL, input: text });
+  const res = await openai().embeddings.create({ model: EMBEDDING_MODEL, input: text, encoding_format: "float" });
   return res.data[0].embedding;
 }

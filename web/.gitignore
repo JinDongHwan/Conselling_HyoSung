@@ -40,3 +40,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# 빌드 때 자동 생성 (scripts/bundle-knowledge.mjs)
+/generated/

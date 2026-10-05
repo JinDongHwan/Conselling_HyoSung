@@ -99,7 +99,10 @@ SUPABASE_SERVICE_ROLE_KEY=
 
 ### 4. 지식베이스 적재
 
-`knowledge/카테고리/` 폴더에 md 파일을 넣은 뒤 실행합니다. 바뀐 파일만 다시 임베딩합니다.
+1. `knowledge/카테고리/` 폴더에 md 파일을 넣거나 고친 뒤 `git push` 합니다. 배포할 때 문서가 자동으로 묶여 함께 올라갑니다(`web/scripts/bundle-knowledge.mjs`).
+2. 관리자 화면 **/admin/knowledge** 에서 **[지식베이스 갱신]** 을 누르면 바뀐 문서만 임베딩해서 Supabase에 저장합니다. 키는 Vercel 서버에만 있으면 됩니다.
+
+로컬에서 직접 넣으려면(키를 `web/.env.local` 에 둬야 함):
 
 ```bash
 cd web

@@ -1,29 +1,70 @@
 import { PageHeader, Panel } from "@/components/PageHeader";
-import { hasAI, hasServiceRole } from "@/lib/config";
+import { DEMO_MODE, hasAI, hasServiceRole } from "@/lib/config";
 import { listKnowledgeFiles } from "@/lib/data";
+import { fmtDateTime } from "@/lib/format";
+import { bundledAt, bundledDocs, storedHashes } from "@/lib/knowledge-sync";
 import { retrieve } from "@/lib/rag";
+import { SyncButton } from "./SyncButton";
 
 export default async function KnowledgePage(props: PageProps<"/admin/knowledge">) {
   const { q } = await props.searchParams;
   const query = typeof q === "string" ? q.trim() : "";
-  const [files, results] = await Promise.all([listKnowledgeFiles(), query ? retrieve(query, 5, 0) : Promise.resolve([])]);
+  const ready = hasAI && hasServiceRole && !DEMO_MODE;
+
+  const [files, results, stored] = await Promise.all([
+    listKnowledgeFiles(),
+    query ? retrieve(query, 5, 0) : Promise.resolve([]),
+    ready ? storedHashes().catch(() => new Map<string, string>()) : Promise.resolve(new Map<string, string>()),
+  ]);
   const byCategory = Object.groupBy(files, (f) => f.category);
-  const ready = hasAI && hasServiceRole;
+  const pendingDocs = bundledDocs.filter((d) => stored.get(d.file) !== d.hash);
+  const bundledFiles = new Set(bundledDocs.map((d) => d.file));
+  const removedCount = [...stored.keys()].filter((f) => f && !bundledFiles.has(f)).length;
 
   return (
     <>
       <PageHeader title="지식베이스" description="챗봇이 답변할 때 참고하는 문서예요. knowledge 폴더의 md 파일을 임베딩해서 저장합니다." />
       <div className="mx-auto max-w-5xl space-y-5 px-4 py-6 sm:px-8">
-        <Panel title="문서 추가·갱신 방법">
-          <ol className="list-decimal space-y-1.5 pl-5 text-sm leading-relaxed">
-            <li>
-              <code className="rounded bg-surface-2 px-1.5 py-0.5">knowledge/카테고리/</code> 폴더에 md 파일을 넣거나 고칩니다.
-            </li>
-            <li>
-              <code className="rounded bg-surface-2 px-1.5 py-0.5">web</code> 폴더에서{" "}
-              <code className="rounded bg-surface-2 px-1.5 py-0.5">npm run ingest</code> 를 실행하면 바뀐 문서만 다시 임베딩됩니다.
-            </li>
-            <li>아래 검색 테스트로 원하는 문서가 잘 찾아지는지 확인하세요.</li>
+        <Panel title="지식베이스 갱신">
+          <dl className="grid gap-px overflow-hidden rounded-xl border border-line bg-line text-sm sm:grid-cols-3">
+            <div className="bg-surface p-4">
+              <dt className="text-muted">배포에 포함된 문서</dt>
+              <dd className="mt-1 text-2xl font-bold">{bundledDocs.length}<span className="text-sm font-normal text-muted">건</span></dd>
+            </div>
+            <div className="bg-surface p-4">
+              <dt className="text-muted">DB에 저장된 문서</dt>
+              <dd className="mt-1 text-2xl font-bold">{files.length}<span className="text-sm font-normal text-muted">건</span></dd>
+            </div>
+            <div className="bg-surface p-4">
+              <dt className="text-muted">갱신 필요</dt>
+              <dd className={`mt-1 text-2xl font-bold ${pendingDocs.length + removedCount ? "text-accent" : ""}`}>
+                {pendingDocs.length + removedCount}
+                <span className="text-sm font-normal text-muted">건</span>
+              </dd>
+            </div>
+          </dl>
+          <p className="mt-3 text-xs text-muted">문서 묶음 생성: {fmtDateTime(bundledAt)} (배포할 때 자동으로 만들어져요)</p>
+
+          <div className="mt-5">
+            <SyncButton pending={pendingDocs.length + removedCount} disabled={!ready} />
+            {!ready && <p className="mt-3 text-sm text-muted">AI 키와 Supabase 서비스 키가 설정되어야 갱신할 수 있어요.</p>}
+          </div>
+
+          {pendingDocs.length > 0 && (
+            <details className="mt-4 text-sm">
+              <summary className="cursor-pointer text-muted">갱신이 필요한 문서 {pendingDocs.length}건 보기</summary>
+              <ul className="mt-2 space-y-0.5 text-muted">
+                {pendingDocs.map((d) => (
+                  <li key={d.file}>• {d.title} <span className="text-xs">({stored.has(d.file) ? "내용 바뀜" : "새 문서"})</span></li>
+                ))}
+              </ul>
+            </details>
+          )}
+
+          <ol className="mt-5 list-decimal space-y-1 border-t border-line pt-4 pl-5 text-sm leading-relaxed text-muted">
+            <li><code className="rounded bg-surface-2 px-1.5 py-0.5">knowledge/카테고리/</code> 폴더에 md 파일을 넣거나 고칩니다.</li>
+            <li><code className="rounded bg-surface-2 px-1.5 py-0.5">git push</code> 하면 자동 배포되며 문서가 함께 올라갑니다.</li>
+            <li>이 화면에서 <b>지식베이스 갱신</b>을 누르면 바뀐 문서만 다시 저장됩니다.</li>
           </ol>
         </Panel>
 
@@ -39,7 +80,7 @@ export default async function KnowledgePage(props: PageProps<"/admin/knowledge">
             />
             <button className="rounded-xl bg-dark px-5 py-2.5 text-sm font-semibold text-page">찾아보기</button>
           </form>
-          {!ready && <p className="mt-3 text-sm text-muted">OpenAI 키와 Supabase 서비스 키를 넣으면 검색 테스트를 할 수 있어요.</p>}
+          {!ready && <p className="mt-3 text-sm text-muted">AI 키와 Supabase 서비스 키를 넣으면 검색 테스트를 할 수 있어요.</p>}
           {query && ready && (
             <ol className="mt-5 space-y-3">
               {results.length ? (
@@ -53,7 +94,7 @@ export default async function KnowledgePage(props: PageProps<"/admin/knowledge">
                   </li>
                 ))
               ) : (
-                <li className="text-sm text-muted">찾은 문서가 없어요.</li>
+                <li className="text-sm text-muted">찾은 문서가 없어요. 먼저 지식베이스를 갱신해 주세요.</li>
               )}
             </ol>
           )}
@@ -80,7 +121,7 @@ export default async function KnowledgePage(props: PageProps<"/admin/knowledge">
               ))}
             </div>
           ) : (
-            <p className="text-sm text-muted">아직 임베딩된 문서가 없어요. npm run ingest 를 실행해 주세요.</p>
+            <p className="text-sm text-muted">아직 저장된 문서가 없어요. 위의 지식베이스 갱신 버튼을 눌러 주세요.</p>
           )}
         </Panel>
       </div>

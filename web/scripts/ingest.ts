@@ -1,4 +1,5 @@
-// knowledge/**/*.md → 청크 → OpenAI 임베딩 → Supabase documents 테이블
+// knowledge/**/*.md → 청크 → 임베딩 → Supabase documents 테이블 (로컬 실행용)
+// 운영에서는 관리자 화면 > 지식베이스 > [지식베이스 갱신] 버튼을 쓰세요 (키를 이 PC에 둘 필요 없음).
 // 실행: npm run ingest            (바뀐 파일만)
 //       npm run ingest -- --all   (전체 다시)
 import { createHash } from "node:crypto";
@@ -8,12 +9,11 @@ import { createClient } from "@supabase/supabase-js";
 import { config } from "dotenv";
 import matter from "gray-matter";
 import OpenAI from "openai";
+import { chunkMarkdown as chunk } from "../lib/chunk";
 
 config({ path: ".env.local" });
 
 const ROOT = path.resolve("..", "knowledge");
-const MAX_CHARS = 1200; // 한국어 기준 대략 500~700 토큰
-const OVERLAP = 200;
 const force = process.argv.includes("--all");
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -33,22 +33,6 @@ const openai = new OpenAI({
 });
 const EMBEDDING_MODEL = process.env.AI_EMBEDDING_MODEL ?? (hasa ? "bge-m3" : "text-embedding-3-small");
 
-function chunk(body: string, title: string): string[] {
-  // "## 소제목" 단위로 자르고, 긴 섹션은 겹치게 다시 자른다
-  const sections = body.split(/\n(?=##\s)/).map((s) => s.trim()).filter(Boolean);
-  const out: string[] = [];
-  for (const section of sections) {
-    const text = `# ${title}\n${section}`;
-    if (text.length <= MAX_CHARS) {
-      out.push(text);
-      continue;
-    }
-    for (let i = 0; i < section.length; i += MAX_CHARS - OVERLAP) {
-      out.push(`# ${title}\n${section.slice(i, i + MAX_CHARS)}`);
-    }
-  }
-  return out;
-}
 
 async function main() {
   const files = fs
@@ -71,7 +55,7 @@ async function main() {
 
     const pieces = chunk(content, title);
     if (!pieces.length) continue;
-    const emb = await openai.embeddings.create({ model: EMBEDDING_MODEL, input: pieces });
+    const emb = await openai.embeddings.create({ model: EMBEDDING_MODEL, input: pieces, encoding_format: "float" });
 
     await supabase.from("documents").delete().eq("metadata->>file", file);
     const { error } = await supabase.from("documents").insert(
