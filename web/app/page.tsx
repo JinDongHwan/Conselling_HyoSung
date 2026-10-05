@@ -2,6 +2,7 @@ import Link from "next/link";
 import bundle from "@/generated/knowledge.json";
 import { Logo } from "@/components/Logo";
 import { Mascot, StarMark, type MascotPose } from "@/components/Mascot";
+import { COMPANY } from "@/lib/company";
 import { MobileMenu } from "./MobileMenu";
 
 // 랜딩 페이지 — Claude Design 시안(magic.ai 랜딩 페이지)을 옮김.
@@ -777,17 +778,31 @@ function Footer() {
         </div>
         <div className="flex flex-wrap justify-between gap-6">
           <div className="flex min-w-0 flex-[1_1_420px] flex-col gap-3">
-            <span className="text-xl font-extrabold tracking-[-0.02em]">
-              magic<span className="text-brand-ink">.ai</span>
-            </span>
-            <p className="max-w-[560px] text-[15px] leading-[1.7] text-muted">
-              magic.ai는 전문 심리상담이나 의료 서비스를 대체하지 않습니다. 진단이나 치료가 필요하다면 전문가와 상담해 주세요.
+            <p className="flex items-center gap-2">
+              <span className="text-xl font-extrabold tracking-[-0.02em]">
+                magic<span className="text-brand-ink">.ai</span>
+              </span>
+              <span className="rounded-full bg-brand-soft px-2 py-0.5 text-xs font-bold text-brand-deep">BETA</span>
             </p>
-            <p className="text-sm text-muted">© 2026 magic.ai · www.pivotal.co.kr</p>
+            <p className="max-w-[560px] text-[15px] leading-[1.7] text-muted">
+              magic.ai는 전문 심리상담이나 의료 서비스를 대체하지 않습니다. 진단이나 치료가 필요하다면 전문가와 상담해 주세요. 지금은 베타 서비스로, 기능이 바뀌거나 잠시 멈출 수 있어요.
+            </p>
+            <address className="text-sm leading-[1.8] text-muted not-italic">
+              {COMPANY.name} · 대표이사 {COMPANY.ceo} · 사업자등록번호 {COMPANY.bizNo}
+              <br />
+              {COMPANY.address}
+              <br />
+              문의{" "}
+              <a href={`mailto:${COMPANY.email}`} className="underline hover:text-ink">
+                {COMPANY.email}
+              </a>{" "}
+              (서비스 문의 전용 · 위기 상황은 109)
+            </address>
+            <p className="text-sm text-muted">© 2026 {COMPANY.nameEn} All Rights Reserved</p>
           </div>
-          <nav aria-label="바로가기" className="flex items-start gap-6 text-[15px]">
-            <Link href="/login" className="font-bold">로그인</Link>
-            <a href="#faq" className="text-muted-2">자주 묻는 질문</a>
+          <nav aria-label="정책" className="flex items-start gap-6 text-[15px]">
+            <Link href="/privacy" className="font-bold">개인정보처리방침</Link>
+            <Link href="/terms" className="text-muted-2">이용약관</Link>
           </nav>
         </div>
       </div>

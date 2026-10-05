@@ -61,9 +61,9 @@ export default async function MyPage() {
             <label className="mt-6 flex items-start gap-3 rounded-xl bg-surface-2 p-4">
               <input type="checkbox" name="consent_admin_view" defaultChecked={profile.consent_admin_view} className="mt-1 accent-brand" />
               <span className="text-sm">
-                <span className="font-medium">상담사가 내 대화 원문을 볼 수 있도록 허용</span>
+                <span className="font-medium">관리자가 내 대화 원문을 볼 수 있도록 허용</span>
                 <span className="mt-0.5 block text-muted">
-                  끄면 상담사는 AI 요약과 위험도만 볼 수 있어요. 위기 상황의 대화는 안전을 위해 이 설정과 관계없이 열람될 수 있습니다.
+                  끄면 관리자는 AI 요약과 위험도만 볼 수 있어요. 위기 상황의 대화는 안전을 위해 이 설정과 관계없이 열람될 수 있습니다.
                 </span>
               </span>
             </label>

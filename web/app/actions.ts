@@ -28,7 +28,8 @@ export async function completeOnboarding(formData: FormData) {
   const profile = await requireProfile();
   const thisYear = new Date().getFullYear();
   const birthYear = clampInt(formData.get("birth_year"), 1900, thisYear);
-  if (!birthYear || thisYear - birthYear < 19 || formData.get("agree") !== "on") {
+  const agreedAll = ["agree_terms", "agree_privacy", "agree_sensitive"].every((k) => formData.get(k) === "on");
+  if (!birthYear || thisYear - birthYear < 19 || !agreedAll) {
     redirect("/onboarding?error=1");
   }
   if (!DEMO_MODE) {

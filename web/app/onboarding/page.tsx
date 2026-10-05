@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { completeOnboarding } from "@/app/actions";
 import { Logo } from "@/components/Logo";
 import { requireProfile } from "@/lib/auth";
@@ -38,15 +39,27 @@ export default async function OnboardingPage(props: PageProps<"/onboarding">) {
 
         <fieldset className="mt-6 space-y-3 rounded-xl bg-surface-2 p-4 text-sm">
           <label className="flex items-start gap-2">
-            <input type="checkbox" name="agree" required className="mt-0.5 accent-brand" />
+            <input type="checkbox" name="agree_terms" required className="mt-0.5 accent-brand" />
             <span>
-              <b>(필수)</b> 이용약관, 개인정보 및 민감정보(상담 내용) 수집·이용에 동의합니다. AI 상담이 의료 서비스를 대체하지 않는다는 점을 이해했습니다.
+              <b>(필수)</b> <Link href="/terms" target="_blank" className="underline">이용약관</Link>에 동의합니다. AI 상담이 의료 서비스를 대체하지 않는다는 점을 이해했습니다.
+            </span>
+          </label>
+          <label className="flex items-start gap-2">
+            <input type="checkbox" name="agree_privacy" required className="mt-0.5 accent-brand" />
+            <span>
+              <b>(필수)</b> <Link href="/privacy" target="_blank" className="underline">개인정보 수집·이용</Link>에 동의합니다. (이메일, 닉네임, 출생연도 · 탈퇴 시 삭제)
+            </span>
+          </label>
+          <label className="flex items-start gap-2">
+            <input type="checkbox" name="agree_sensitive" required className="mt-0.5 accent-brand" />
+            <span>
+              <b>(필수)</b> 민감정보(상담 대화 내용, 기분·자가진단 기록) 처리에 동의합니다. AI 답변 생성을 위해 대화 내용이 AI 모델 제공 업체로 전송돼요.
             </span>
           </label>
           <label className="flex items-start gap-2">
             <input type="checkbox" name="consent_admin_view" className="mt-0.5 accent-brand" />
             <span>
-              <b>(선택)</b> 더 나은 도움을 위해 상담사가 내 대화 원문을 볼 수 있도록 허용합니다. 동의하지 않아도 위기 상황에서는 안전을 위해 열람될 수 있어요.
+              <b>(선택)</b> 더 나은 도움을 위해 관리자가 내 대화 원문을 볼 수 있도록 허용합니다. 동의하지 않아도 위기 상황에서는 안전을 위해 열람될 수 있어요.
             </span>
           </label>
         </fieldset>
