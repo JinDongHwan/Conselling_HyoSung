@@ -8,14 +8,16 @@ export const DEMO_MODE = !hasSupabase;
 
 // AI 제공자: HASA_API_KEY 가 있으면 Open AI Service Hub(open.hasa.re.kr), 없으면 OpenAI
 // 둘 다 OpenAI 호환 API라서 같은 SDK로 호출한다.
-export const AI_PROVIDER: "hasa" | "openai" | null = process.env.HASA_API_KEY
+// Vercel에 Hasa_API_KEY 처럼 대소문자가 다르게 저장된 경우도 받아 준다
+const HASA_KEY = process.env.HASA_API_KEY ?? process.env.Hasa_API_KEY ?? process.env.hasa_api_key;
+export const AI_PROVIDER: "hasa" | "openai" | null = HASA_KEY
   ? "hasa"
   : process.env.OPENAI_API_KEY
     ? "openai"
     : null;
 export const hasAI = AI_PROVIDER !== null;
 
-export const AI_API_KEY = process.env.HASA_API_KEY ?? process.env.OPENAI_API_KEY;
+export const AI_API_KEY = HASA_KEY ?? process.env.OPENAI_API_KEY;
 export const AI_BASE_URL =
   AI_PROVIDER === "hasa"
     ? (process.env.HASA_BASE_URL ?? "https://open.hasa.re.kr/v1")

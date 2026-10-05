@@ -19,8 +19,9 @@ const force = process.argv.includes("--all");
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
 // lib/config.ts 와 같은 규칙: HASA_API_KEY 가 있으면 open.hasa.re.kr, 없으면 OpenAI
-const hasa = Boolean(process.env.HASA_API_KEY);
-const apiKey = process.env.HASA_API_KEY ?? process.env.OPENAI_API_KEY;
+const hasaKey = process.env.HASA_API_KEY ?? process.env.Hasa_API_KEY ?? process.env.hasa_api_key;
+const hasa = Boolean(hasaKey);
+const apiKey = hasaKey ?? process.env.OPENAI_API_KEY;
 if (!url || !key || !apiKey) {
   console.error("web/.env.local 에 NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, HASA_API_KEY(또는 OPENAI_API_KEY) 가 필요합니다.");
   process.exit(1);
