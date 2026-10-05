@@ -4,6 +4,7 @@ import { randomInt } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getCurrentProfile, requireAdmin, requireProfile } from "@/lib/auth";
+import { POLICY_VERSION } from "@/lib/company";
 import { DEMO_MODE, hasServiceRole } from "@/lib/config";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 
@@ -34,14 +35,20 @@ export async function completeOnboarding(formData: FormData) {
   }
   if (!DEMO_MODE) {
     const supabase = await createClient();
-    await supabase
-      .from("profiles")
-      .update({
-        birth_year: birthYear,
-        nickname: String(formData.get("nickname") ?? "").slice(0, 20) || profile.nickname,
-        consent_admin_view: formData.get("consent_admin_view") === "on",
-      })
-      .eq("id", profile.id);
+    const now = new Date().toISOString();
+    const basic = {
+      birth_year: birthYear,
+      nickname: String(formData.get("nickname") ?? "").slice(0, 20) || profile.nickname,
+      consent_admin_view: formData.get("consent_admin_view") === "on",
+    };
+    // 약관 동의 기록: 어떤 버전에 언제 동의했는지
+    const consent = { policy_version: POLICY_VERSION, terms_agreed_at: now, privacy_agreed_at: now, sensitive_agreed_at: now };
+    const { error } = await supabase.from("profiles").update({ ...basic, ...consent }).eq("id", profile.id);
+    if (error) {
+      // 동의 기록 칸이 아직 없으면(0002 미실행) 기본 정보만이라도 저장
+      console.error("[onboarding] consent save failed:", error.code, error.message);
+      await supabase.from("profiles").update(basic).eq("id", profile.id);
+    }
   }
   redirect("/dashboard");
 }

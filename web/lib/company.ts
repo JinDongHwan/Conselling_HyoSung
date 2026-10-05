@@ -16,3 +16,7 @@ export const COMPANY = {
 
 // 개인정보처리방침·이용약관 시행일
 export const POLICY_EFFECTIVE_DATE = "2026년 10월 5일";
+
+// 약관 버전 — 법률 검토 등으로 내용을 바꾸면 날짜를 새로 올린다.
+// 동의한 버전이 이것과 다른 사용자는 다음 접속 때 동의 화면을 다시 거친다.
+export const POLICY_VERSION = "2026-10-05";

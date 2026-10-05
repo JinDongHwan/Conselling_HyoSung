@@ -3,12 +3,12 @@ import { redirect } from "next/navigation";
 import { signOut } from "@/app/actions";
 import { ArchiveIcon, ChartIcon, ChatIcon, HomeIcon, UserIcon } from "@/components/icons";
 import { SideNav } from "@/components/SideNav";
-import { requireProfile } from "@/lib/auth";
+import { needsOnboarding, requireProfile } from "@/lib/auth";
 import { DEMO_MODE } from "@/lib/config";
 
 export default async function DashboardLayout({ children }: LayoutProps<"/dashboard">) {
   const profile = await requireProfile();
-  if (!DEMO_MODE && !profile.birth_year) redirect("/onboarding");
+  if (needsOnboarding(profile)) redirect("/onboarding");
 
   return (
     <div className="flex min-h-screen flex-col lg:flex-row">

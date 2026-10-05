@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
@@ -141,7 +142,7 @@ export function LoginForm({ next, demo, initialMode = "login" }: { next: string;
         {mode === "signup" && (
           <label className="flex items-start gap-2 pt-1 text-sm">
             <input type="checkbox" checked={adult} onChange={(e) => setAdult(e.target.checked)} className="mt-0.5 accent-brand" />
-            <span>만 19세 이상이며, 이용약관과 개인정보(민감정보 포함) 수집·이용에 동의합니다.</span>
+            <span>만 19세 이상입니다.</span>
           </label>
         )}
 
@@ -170,6 +171,12 @@ export function LoginForm({ next, demo, initialMode = "login" }: { next: string;
         >
           {mode === "login" ? "이메일로 가입하기" : "로그인하기"}
         </button>
+      </p>
+
+      <p className="mt-4 text-center text-xs leading-relaxed text-muted">
+        처음 가입하면 다음 단계에서{" "}
+        <Link href="/terms" target="_blank" className="underline">이용약관</Link>과{" "}
+        <Link href="/privacy" target="_blank" className="underline">개인정보처리방침</Link> 동의를 받아요.
       </p>
     </div>
   );

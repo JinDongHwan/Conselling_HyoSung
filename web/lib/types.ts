@@ -9,6 +9,11 @@ export type Profile = {
   role: "user" | "admin";
   consent_admin_view: boolean;
   created_at: string;
+  // 약관 동의 기록 (supabase/migrations/0002_policy_consent.sql)
+  policy_version?: string | null;
+  terms_agreed_at?: string | null;
+  privacy_agreed_at?: string | null;
+  sensitive_agreed_at?: string | null;
 };
 
 export type Source = { title: string; category?: string; source_url?: string };

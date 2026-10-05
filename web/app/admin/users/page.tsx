@@ -2,6 +2,7 @@ import { setUserRole } from "@/app/actions";
 import { PageHeader, RiskBadge } from "@/components/PageHeader";
 import { listUsers } from "@/lib/data";
 import { fmtDate } from "@/lib/format";
+import { POLICY_VERSION } from "@/lib/company";
 import { TempPasswordButton } from "./TempPasswordButton";
 
 export default async function UsersPage(props: PageProps<"/admin/users">) {
@@ -29,6 +30,7 @@ export default async function UsersPage(props: PageProps<"/admin/users">) {
                 <th className="px-5 py-3 font-medium">출생연도</th>
                 <th className="px-5 py-3 text-right font-medium">상담 수</th>
                 <th className="px-5 py-3 font-medium">최근 위험도</th>
+                <th className="px-5 py-3 font-medium">약관 동의</th>
                 <th className="px-5 py-3 font-medium">원문 열람 동의</th>
                 <th className="px-5 py-3 font-medium">권한</th>
                 <th className="px-5 py-3 font-medium">비밀번호</th>
@@ -43,6 +45,18 @@ export default async function UsersPage(props: PageProps<"/admin/users">) {
                   <td className="px-5 py-3 text-muted">{u.birth_year ?? "-"}</td>
                   <td className="px-5 py-3 text-right tabular-nums">{u.session_count}</td>
                   <td className="px-5 py-3"><RiskBadge risk={u.last_risk} /></td>
+                  <td className="px-5 py-3 text-muted">
+                    {u.terms_agreed_at ? (
+                      <>
+                        {fmtDate(u.terms_agreed_at)}
+                        <span className={`block text-xs ${u.policy_version === POLICY_VERSION ? "" : "text-accent"}`}>
+                          {u.policy_version === POLICY_VERSION ? "최신 버전" : `이전 버전 (${u.policy_version})`}
+                        </span>
+                      </>
+                    ) : (
+                      "기록 없음"
+                    )}
+                  </td>
                   <td className="px-5 py-3">{u.consent_admin_view ? "동의" : <span className="text-muted">미동의</span>}</td>
                   <td className="px-5 py-3">
                     <form action={setUserRole} className="flex items-center gap-2">

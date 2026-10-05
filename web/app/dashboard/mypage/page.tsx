@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { deleteAccount, saveProfile, signOut } from "@/app/actions";
 import { PageHeader, Panel } from "@/components/PageHeader";
 import { PasswordForm } from "@/components/PasswordForm";
@@ -81,6 +82,23 @@ export default async function MyPage() {
             {DEMO_MODE ? <p className="text-sm text-muted">데모 모드에서는 바꿀 수 없어요.</p> : <PasswordForm />}
           </Panel>
         )}
+
+        <Panel title="약관 동의 내역">
+          <p className="text-sm">
+            {profile.terms_agreed_at ? (
+              <>
+                {fmtDate(profile.terms_agreed_at)}에 이용약관, 개인정보 수집·이용, 민감정보 처리에 동의했어요.
+                <span className="ml-1 text-muted">(약관 버전 {profile.policy_version})</span>
+              </>
+            ) : (
+              <span className="text-muted">동의 기록이 없어요.</span>
+            )}
+          </p>
+          <p className="mt-3 flex gap-4 text-sm font-semibold text-brand">
+            <Link href="/terms" className="hover:underline">이용약관 보기</Link>
+            <Link href="/privacy" className="hover:underline">개인정보처리방침 보기</Link>
+          </p>
+        </Panel>
 
         <Panel title="계정">
           <form action={signOut}>
