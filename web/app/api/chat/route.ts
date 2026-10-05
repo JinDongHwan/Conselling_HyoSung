@@ -83,7 +83,11 @@ export async function POST(req: Request) {
       },
     });
   } else {
-    const chunks = await retrieve(text);
+    // 짧은 후속 질문("그럼 어떻게 해?")도 대화 흐름에 맞는 자료를 찾도록 바로 앞 사용자 메시지를 함께 검색
+    const prevUser = [...recent].reverse().find((t) => t.role === "user")?.content;
+    const searchQuery = prevUser ? `${prevUser.slice(0, 300)}\n${text}` : text;
+    // 위기 대응 문서는 위험 신호(주의·위기)가 있을 때만 참고
+    const chunks = await retrieve(searchQuery, { includeCrisis: risk !== "low" });
     sources = toSources(chunks);
     const system = counselorSystemPrompt({ tone: profile.tone_pref, nickname: profile.nickname, risk });
     const context = formatContext(chunks);

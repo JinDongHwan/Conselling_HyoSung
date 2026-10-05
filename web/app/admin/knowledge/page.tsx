@@ -13,7 +13,7 @@ export default async function KnowledgePage(props: PageProps<"/admin/knowledge">
 
   const [files, results, stored] = await Promise.all([
     listKnowledgeFiles(),
-    query ? retrieve(query, 5, 0) : Promise.resolve([]),
+    query ? retrieve(query, { k: 5, minSimilarity: 0 }) : Promise.resolve([]),
     ready ? storedHashes().catch(() => new Map<string, string>()) : Promise.resolve(new Map<string, string>()),
   ]);
   const byCategory = Object.groupBy(files, (f) => f.category);
