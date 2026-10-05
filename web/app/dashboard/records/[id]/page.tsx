@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { deleteSession } from "@/app/actions";
 import { RiskBadge } from "@/components/PageHeader";
+import { ReplyText } from "@/components/ReplyText";
 import { requireProfile } from "@/lib/auth";
 import { getSession } from "@/lib/data";
 import { fmtDate, fmtDateTime } from "@/lib/format";
@@ -48,13 +49,13 @@ export default async function RecordDetail(props: PageProps<"/dashboard/records/
           <ol className="mt-4 space-y-3">
             {messages.map((m) => (
               <li key={m.id} className={m.role === "user" ? "flex flex-col items-end" : ""}>
-                <p
-                  className={`max-w-[90%] rounded-2xl px-4 py-2.5 leading-relaxed whitespace-pre-wrap ${
+                <div
+                  className={`max-w-[min(90%,40rem)] rounded-2xl px-4 py-2.5 leading-7 whitespace-pre-wrap ${
                     m.role === "user" ? "rounded-br-sm bg-brand text-white" : "rounded-bl-sm border border-line bg-surface"
                   }`}
                 >
-                  {m.content}
-                </p>
+                  {m.role === "assistant" ? <ReplyText text={m.content} /> : m.content}
+                </div>
                 <span className="mt-1 block text-xs text-muted">{fmtDateTime(m.created_at)}</span>
               </li>
             ))}

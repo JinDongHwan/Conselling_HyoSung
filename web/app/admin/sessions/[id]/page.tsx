@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { logAdminView } from "@/app/actions";
 import { RiskBadge } from "@/components/PageHeader";
+import { ReplyText } from "@/components/ReplyText";
 import { requireAdmin } from "@/lib/auth";
 import { getSession } from "@/lib/data";
 import { fmtDate, fmtDateTime } from "@/lib/format";
@@ -38,7 +39,7 @@ export default async function AdminSessionPage(props: PageProps<"/admin/sessions
                     {m.role === "user" ? "사용자" : "AI"} · {fmtDateTime(m.created_at)}
                     {m.risk_flag === "high" && <span className="ml-2 font-semibold text-danger">위험 신호</span>}
                   </p>
-                  <p className="mt-1.5 leading-relaxed whitespace-pre-wrap">{m.content}</p>
+                  {m.role === "assistant" ? <ReplyText text={m.content} className="mt-1.5" /> : <p className="mt-1.5 leading-7 whitespace-pre-wrap">{m.content}</p>}
                 </li>
               ))}
             </ol>

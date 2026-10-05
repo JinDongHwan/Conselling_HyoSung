@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { CrisisCard } from "@/components/CrisisCard";
+import { ReplyText } from "@/components/ReplyText";
 import type { Risk, Source } from "@/lib/types";
 
 type Msg = { role: "user" | "assistant"; content: string; sources?: Source[] };
@@ -162,13 +163,13 @@ export function Chat({ nickname }: { nickname: string | null }) {
 
           {messages.map((m, i) =>
             m.role === "user" ? (
-              <p key={i} className="ml-auto max-w-[85%] rounded-2xl rounded-br-sm bg-brand px-4 py-2.5 whitespace-pre-wrap text-white">
+              <p key={i} className="ml-auto max-w-[min(85%,36rem)] rounded-2xl rounded-br-sm bg-brand px-4 py-2.5 leading-7 whitespace-pre-wrap text-white">
                 {m.content}
               </p>
             ) : (
-              <div key={i} className="max-w-[90%]">
-                <div className="rounded-2xl rounded-bl-sm border border-line bg-surface px-4 py-3 leading-relaxed whitespace-pre-wrap">
-                  {m.content || (
+              <div key={i} className="max-w-[min(90%,40rem)]">
+                <div className="rounded-2xl rounded-bl-sm border border-line bg-surface px-5 py-4 text-[15.5px]">
+                  {m.content ? <ReplyText text={m.content} /> : (
                     <span className="inline-flex items-center gap-2 text-sm text-muted">
                       <span className="inline-block size-2 rounded-full bg-accent" />
                       생각을 정리하고 있어요
