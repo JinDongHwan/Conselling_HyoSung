@@ -95,12 +95,12 @@ create table public.documents (
   id bigint generated always as identity primary key,
   content text not null,
   metadata jsonb not null default '{}',   -- title, category, source_url, chunk_index, file
-  embedding vector(1536)                  -- OpenAI text-embedding-3-small
+  embedding vector(1024)                  -- open.hasa bge-m3 (OpenAI text-embedding-3-small 로 바꾸면 1536)
 );
 create index on public.documents using hnsw (embedding vector_cosine_ops);
 
 create or replace function public.match_documents(
-  query_embedding vector(1536),
+  query_embedding vector(1024),
   match_count int default 5,
   filter jsonb default '{}'
 ) returns table (id bigint, content text, metadata jsonb, similarity float)
