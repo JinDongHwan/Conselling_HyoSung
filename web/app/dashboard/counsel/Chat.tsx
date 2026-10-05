@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { CrisisCard } from "@/components/CrisisCard";
+import { Mascot } from "@/components/Mascot";
 import { ReplyText } from "@/components/ReplyText";
 import type { Risk, Source } from "@/lib/types";
 
@@ -167,31 +168,36 @@ export function Chat({ nickname }: { nickname: string | null }) {
                 {m.content}
               </p>
             ) : (
-              <div key={i} className="max-w-[min(90%,40rem)]">
-                <div className="rounded-2xl rounded-bl-sm border border-line bg-surface px-5 py-4 text-[15.5px]">
-                  {m.content ? <ReplyText text={m.content} /> : (
-                    <span className="inline-flex items-center gap-2 text-sm text-muted">
-                      <span className="inline-block size-2 rounded-full bg-accent" />
-                      생각을 정리하고 있어요
-                    </span>
+              <div key={i} className="flex max-w-[min(94%,43rem)] items-start gap-2.5">
+                <span className="mt-1 grid size-9 shrink-0 place-items-center rounded-full bg-brand-soft">
+                  <Mascot pose="bubble" size={30} decorative />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <div className="rounded-2xl rounded-tl-sm border border-line bg-surface px-5 py-4 text-[15.5px]">
+                    {m.content ? <ReplyText text={m.content} /> : (
+                      <span className="inline-flex items-center gap-2 text-sm text-muted">
+                        <span className="inline-block size-2 rounded-full bg-accent" />
+                        생각을 정리하고 있어요
+                      </span>
+                    )}
+                  </div>
+                  {m.sources && m.sources.length > 0 && (
+                    <ul className="mt-2 flex flex-wrap gap-1.5 text-xs">
+                      <li className="py-1 text-muted">참고한 자료</li>
+                      {m.sources.map((s) => (
+                        <li key={s.title}>
+                          {s.source_url ? (
+                            <a href={s.source_url} target="_blank" rel="noreferrer" className="block rounded-md bg-brand-soft px-2 py-1 hover:underline">
+                              {s.title}
+                            </a>
+                          ) : (
+                            <span className="block rounded-md bg-brand-soft px-2 py-1">{s.title}</span>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
                   )}
                 </div>
-                {m.sources && m.sources.length > 0 && (
-                  <ul className="mt-2 flex flex-wrap gap-1.5 text-xs">
-                    <li className="py-1 text-muted">참고한 자료</li>
-                    {m.sources.map((s) => (
-                      <li key={s.title}>
-                        {s.source_url ? (
-                          <a href={s.source_url} target="_blank" rel="noreferrer" className="block rounded-md bg-brand-soft px-2 py-1 hover:underline">
-                            {s.title}
-                          </a>
-                        ) : (
-                          <span className="block rounded-md bg-brand-soft px-2 py-1">{s.title}</span>
-                        )}
-                      </li>
-                    ))}
-                  </ul>
-                )}
               </div>
             ),
           )}

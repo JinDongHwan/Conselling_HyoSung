@@ -1,20 +1,18 @@
 import Link from "next/link";
+import { StarMark } from "./Mascot";
 
-// 워드마크: 보라 별빛 마크 + magic.ai (onDark: 보라 배경 위에서 흰색)
+// 워드마크: 마스코트 별 마크 + magic.ai (onDark: 보라 배경 위에서 흰색)
 export function Logo({ href = "/", className = "", onDark = false }: { href?: string; className?: string; onDark?: boolean }) {
   return (
     <Link
       href={href}
-      className={`inline-flex items-center gap-1.5 text-[22px] font-extrabold tracking-tight ${onDark ? "text-white" : "text-ink"} ${className}`}
+      aria-label="magic.ai 홈"
+      className={`inline-flex items-center gap-2 text-[22px] font-extrabold tracking-tight ${onDark ? "text-white" : "text-ink"} ${className}`}
     >
-      <svg aria-hidden viewBox="0 0 24 24" className="size-6">
-        <path
-          fill={onDark ? "#ffffff" : "var(--brand)"}
-          d="M12 2c.5 4.6 2.4 6.9 7 7.5-4.6.6-6.5 2.9-7 7.5-.5-4.6-2.4-6.9-7-7.5 4.6-.6 6.5-2.9 7-7.5Z"
-        />
-        <circle cx="19" cy="19" r="2.2" fill="var(--accent)" />
-      </svg>
-      magic.ai
+      <StarMark className="size-7" color={onDark ? "#ffffff" : "#7761FF"} />
+      <span>
+        magic<span className={onDark ? "" : "text-brand-ink"}>.ai</span>
+      </span>
     </Link>
   );
 }

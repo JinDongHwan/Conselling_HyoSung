@@ -1,7 +1,8 @@
 @import "tailwindcss";
 
 /* magic.ai tokens — sangnyang.ai 톤 참고: 흰 배경 · 보라 메인 · 주황 키워드 칩 · 짙은 회색 보조 버튼 */
-:root {
+:root,
+[data-theme="light"] {
   --bg: #f9fafb; /* 앱(대시보드) 배경 */
   --page: #ffffff; /* 랜딩 배경 */
   --section: #fafafa; /* 번갈아 쓰는 섹션 배경 */
@@ -18,6 +19,15 @@
   --dark: #333333;
   --danger: #e5484d;
   --danger-soft: #ffeeee;
+  /* Claude Design 시안에서 추가: 진한 보라(버튼), 보라 글자, 아주 연한 보라 배경, 보조 글자색 */
+  --brand-ink: #6b55f7;
+  --brand-deep: #5a44e6;
+  --brand-tint: #f7f6ff;
+  --brand-line: #d9d3ff;
+  --ink-2: #344054;
+  --muted-2: #475467;
+  --accent-ink: #b54708;
+  --accent-tint: #fff4ea;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -38,6 +48,14 @@
     --dark: #e4e7ec;
     --danger: #ff6b6f;
     --danger-soft: #3a1c1e;
+    --brand-ink: #8a78ff;
+    --brand-deep: #b1a5ff;
+    --brand-tint: #1c1a33;
+    --brand-line: #3a3466;
+    --ink-2: #d0d5dd;
+    --muted-2: #a6b0bf;
+    --accent-ink: #ffb070;
+    --accent-tint: #3a2a18;
   }
 }
 
@@ -58,6 +76,14 @@
   --color-dark: var(--dark);
   --color-danger: var(--danger);
   --color-danger-soft: var(--danger-soft);
+  --color-brand-ink: var(--brand-ink);
+  --color-brand-deep: var(--brand-deep);
+  --color-brand-tint: var(--brand-tint);
+  --color-brand-line: var(--brand-line);
+  --color-ink-2: var(--ink-2);
+  --color-muted-2: var(--muted-2);
+  --color-accent-ink: var(--accent-ink);
+  --color-accent-tint: var(--accent-tint);
   --font-sans: "Pretendard Variable", Pretendard, -apple-system, system-ui, sans-serif;
 }
 
