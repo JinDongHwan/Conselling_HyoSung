@@ -4,6 +4,18 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 
+// Supabase 인증 오류를 이해하기 쉬운 문장으로 바꾼다. 모르는 오류는 원문(코드)을 함께 보여 준다.
+function authMessage(err: { message: string; code?: string; status?: number }, fallback: string) {
+  const m = err.message.toLowerCase();
+  if (err.code === "invalid_credentials" || m.includes("invalid login")) return "이메일 또는 비밀번호가 맞지 않아요.";
+  if (err.code === "email_not_confirmed" || m.includes("not confirmed")) return "메일함의 인증 링크를 먼저 눌러 주세요.";
+  if (err.code === "user_already_exists" || m.includes("already registered")) return "이미 가입된 이메일이에요. 로그인해 주세요.";
+  if (err.code === "weak_password" || m.includes("password")) return "비밀번호가 너무 약해요. 8자 이상, 영문·숫자를 섞어 주세요.";
+  if (err.code === "over_email_send_rate_limit" || m.includes("rate limit")) return "인증 메일을 너무 자주 보냈어요. 잠시 후 다시 시도해 주세요.";
+  if (err.code === "email_address_invalid" || m.includes("invalid") && m.includes("email")) return "사용할 수 없는 이메일 주소예요.";
+  return `${fallback} (${err.code ?? err.status ?? ""} ${err.message})`;
+}
+
 export function LoginForm({ next, demo }: { next: string; demo: boolean }) {
   const router = useRouter();
   const [mode, setMode] = useState<"login" | "signup">("login");
@@ -26,7 +38,7 @@ export function LoginForm({ next, demo }: { next: string; demo: boolean }) {
     const supabase = createClient();
     if (mode === "login") {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) setError("이메일 또는 비밀번호가 맞지 않아요.");
+      if (error) setError(authMessage(error, "이메일 또는 비밀번호가 맞지 않아요."));
       else router.push(next);
     } else {
       const { error } = await supabase.auth.signUp({
@@ -34,7 +46,7 @@ export function LoginForm({ next, demo }: { next: string; demo: boolean }) {
         password,
         options: { emailRedirectTo: callbackUrl() },
       });
-      if (error) setError(error.message.includes("Password") ? "비밀번호는 8자 이상으로 정해 주세요." : "가입하지 못했어요. 이메일을 확인해 주세요.");
+      if (error) setError(authMessage(error, "가입하지 못했어요."));
       else setNotice("인증 메일을 보냈어요. 메일의 링크를 누르면 가입이 완료됩니다.");
     }
     setBusy(false);
