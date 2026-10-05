@@ -30,7 +30,7 @@
 | 영역 | 사용 기술 |
 |---|---|
 | 웹 | Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS 4 |
-| AI | OpenAI API — 상담 `gpt-5.5`, 위기 분류·요약 `gpt-5.4-mini`, 임베딩 `text-embedding-3-small` |
+| AI | OpenAI 호환 API — **Open AI Service Hub(open.hasa.re.kr)** 기본: 상담 `exaone-4.0-32b`, 분류·요약 `gpt-oss-20b`, 임베딩 `bge-m3` / OpenAI로 전환 가능 |
 | DB·인증 | Supabase (Postgres + pgvector, Auth: 이메일·카카오) |
 | 디자인 | Pretendard, sangnyang.ai 구성 참고 |
 
@@ -87,11 +87,12 @@ API 키가 없으면 **데모 모드**로 실행되어, 로그인 없이 예시 
 `web/.env.example`을 `web/.env.local`로 복사한 뒤 값을 채웁니다.
 
 ```bash
-OPENAI_API_KEY=
+HASA_API_KEY=          # open.hasa.re.kr 개발키 (있으면 우선 사용)
+OPENAI_API_KEY=        # 또는 OpenAI 키
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
-# 선택: OPENAI_CHAT_MODEL, OPENAI_UTILITY_MODEL
+# 선택: AI_CHAT_MODEL, AI_UTILITY_MODEL, AI_EMBEDDING_MODEL
 ```
 
 > `.env.local`과 키가 담긴 파일은 `.gitignore`로 제외되어 있습니다. 절대 커밋하지 마세요.

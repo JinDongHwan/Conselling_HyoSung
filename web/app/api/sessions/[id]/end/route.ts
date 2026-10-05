@@ -1,5 +1,5 @@
 import { getCurrentProfile } from "@/lib/auth";
-import { DEMO_MODE, hasOpenAI, UTILITY_MODEL } from "@/lib/config";
+import { DEMO_MODE, hasAI, UTILITY_MODEL } from "@/lib/config";
 import { openai } from "@/lib/openai";
 import { createClient } from "@/lib/supabase/server";
 
@@ -22,11 +22,11 @@ export async function POST(req: Request, ctx: RouteContext<"/api/sessions/[id]/e
   if (!messages?.length) return new Response("상담 기록을 찾을 수 없습니다.", { status: 404 });
 
   let meta: { title?: string; summary?: string; topics?: string[] } = {};
-  if (hasOpenAI) {
+  if (hasAI) {
     try {
       const res = await openai().chat.completions.create({
         model: UTILITY_MODEL,
-        max_completion_tokens: 800,
+        max_completion_tokens: 2000,
         response_format: {
           type: "json_schema",
           json_schema: {

@@ -18,12 +18,19 @@ const force = process.argv.includes("--all");
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-if (!url || !key || !process.env.OPENAI_API_KEY) {
-  console.error("web/.env.local 에 NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, OPENAI_API_KEY 가 필요합니다.");
+// lib/config.ts 와 같은 규칙: HASA_API_KEY 가 있으면 open.hasa.re.kr, 없으면 OpenAI
+const hasa = Boolean(process.env.HASA_API_KEY);
+const apiKey = process.env.HASA_API_KEY ?? process.env.OPENAI_API_KEY;
+if (!url || !key || !apiKey) {
+  console.error("web/.env.local 에 NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, HASA_API_KEY(또는 OPENAI_API_KEY) 가 필요합니다.");
   process.exit(1);
 }
 const supabase = createClient(url, key, { auth: { persistSession: false } });
-const openai = new OpenAI();
+const openai = new OpenAI({
+  apiKey,
+  baseURL: hasa ? (process.env.HASA_BASE_URL ?? "https://open.hasa.re.kr/v1") : process.env.OPENAI_BASE_URL,
+});
+const EMBEDDING_MODEL = process.env.AI_EMBEDDING_MODEL ?? (hasa ? "bge-m3" : "text-embedding-3-small");
 
 function chunk(body: string, title: string): string[] {
   // "## 소제목" 단위로 자르고, 긴 섹션은 겹치게 다시 자른다
@@ -63,7 +70,7 @@ async function main() {
 
     const pieces = chunk(content, title);
     if (!pieces.length) continue;
-    const emb = await openai.embeddings.create({ model: "text-embedding-3-small", input: pieces });
+    const emb = await openai.embeddings.create({ model: EMBEDDING_MODEL, input: pieces });
 
     await supabase.from("documents").delete().eq("metadata->>file", file);
     const { error } = await supabase.from("documents").insert(

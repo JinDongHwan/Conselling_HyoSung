@@ -1,6 +1,6 @@
 import { getCurrentProfile } from "@/lib/auth";
-import { CHAT_MODEL, DEMO_MODE, hasOpenAI, hasServiceRole } from "@/lib/config";
-import { openai } from "@/lib/openai";
+import { CHAT_MODEL, DEMO_MODE, hasAI, hasServiceRole } from "@/lib/config";
+import { openai, openaiOnly } from "@/lib/openai";
 import { counselorSystemPrompt, CRISIS_REPLY, formatContext } from "@/lib/prompts";
 import { retrieve, toSources } from "@/lib/rag";
 import { assessRisk } from "@/lib/safety";
@@ -68,11 +68,11 @@ export async function POST(req: Request) {
         c.close();
       },
     });
-  } else if (!hasOpenAI) {
+  } else if (!hasAI) {
     const demo =
-      "지금은 데모 모드라서 실제 AI 대신 예시 답변을 보여 드리고 있어요. " +
-      "web/.env.local 에 OPENAI_API_KEY 를 넣으면 지식베이스를 근거로 한 상담 답변이 이 자리에 실시간으로 표시됩니다.\n\n" +
-      "그래도 방금 적어 준 이야기는 잘 읽었어요. 그 일이 있고 나서 몸에서는 어떤 느낌이 드나요?";
+      // AI 키(HASA_API_KEY 또는 OPENAI_API_KEY)가 없을 때의 체험용 답변
+      "(지금은 체험용 예시 답변이에요. AI 상담 연결을 준비하고 있어요.)\n\n" +
+      "방금 적어 준 이야기는 잘 읽었어요. 그 일이 있고 나서 몸에서는 어떤 느낌이 드나요?";
     stream = new ReadableStream({
       async start(c) {
         for (const piece of demo.match(/[\s\S]{1,6}/g) ?? []) {
@@ -92,7 +92,7 @@ export async function POST(req: Request) {
       model: CHAT_MODEL,
       stream: true,
       max_completion_tokens: 2000,
-      reasoning_effort: "low",
+      ...openaiOnly({ reasoning_effort: "low" as const }),
       messages: [
         { role: "system", content: system + (context ? `\n\n${context}` : "") },
         ...recent,

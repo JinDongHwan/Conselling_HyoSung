@@ -1,5 +1,5 @@
 import "server-only";
-import { hasOpenAI, hasServiceRole } from "./config";
+import { hasAI, hasServiceRole } from "./config";
 import { embed } from "./openai";
 import { createServiceClient } from "./supabase/server";
 import type { Source } from "./types";
@@ -7,7 +7,7 @@ import type { Source } from "./types";
 export type Chunk = { id: number; content: string; metadata: Source & { file?: string }; similarity: number };
 
 export async function retrieve(query: string, k = 5, minSimilarity = 0.3): Promise<Chunk[]> {
-  if (!hasOpenAI || !hasServiceRole) return [];
+  if (!hasAI || !hasServiceRole) return [];
   try {
     const embedding = await embed(query);
     const { data, error } = await createServiceClient().rpc("match_documents", {

@@ -1,5 +1,5 @@
 import { PageHeader, Panel } from "@/components/PageHeader";
-import { hasOpenAI, hasServiceRole } from "@/lib/config";
+import { hasAI, hasServiceRole } from "@/lib/config";
 import { listKnowledgeFiles } from "@/lib/data";
 import { retrieve } from "@/lib/rag";
 
@@ -8,7 +8,7 @@ export default async function KnowledgePage(props: PageProps<"/admin/knowledge">
   const query = typeof q === "string" ? q.trim() : "";
   const [files, results] = await Promise.all([listKnowledgeFiles(), query ? retrieve(query, 5, 0) : Promise.resolve([])]);
   const byCategory = Object.groupBy(files, (f) => f.category);
-  const ready = hasOpenAI && hasServiceRole;
+  const ready = hasAI && hasServiceRole;
 
   return (
     <>

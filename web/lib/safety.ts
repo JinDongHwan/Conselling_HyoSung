@@ -1,5 +1,5 @@
 import "server-only";
-import { hasOpenAI, UTILITY_MODEL } from "./config";
+import { hasAI, UTILITY_MODEL } from "./config";
 import { openai } from "./openai";
 import type { Risk } from "./types";
 
@@ -22,12 +22,12 @@ const maxRisk = (a: Risk, b: Risk): Risk => (order[a] >= order[b] ? a : b);
 // 2차: 모델 분류 — 맥락(농담, 과거 이야기, 제3자 이야기)을 반영
 export async function assessRisk(message: string, recent: string[] = []): Promise<Risk> {
   const byKeyword = keywordRisk(message);
-  if (!hasOpenAI) return byKeyword;
+  if (!hasAI) return byKeyword;
 
   try {
     const res = await openai().chat.completions.create({
       model: UTILITY_MODEL,
-      max_completion_tokens: 300,
+      max_completion_tokens: 1000, // 추론형 모델(gpt-oss 등)은 생각 토큰도 포함
       response_format: {
         type: "json_schema",
         json_schema: {
