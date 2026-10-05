@@ -25,7 +25,7 @@ export const AI_BASE_URL =
     : process.env.OPENAI_BASE_URL; // undefined → SDK 기본값(api.openai.com)
 
 const DEFAULTS = {
-  hasa: { chat: "exaone-4.0-32b", utility: "gpt-oss-20b", embedding: "bge-m3", dim: 1024 },
+  hasa: { chat: "gpt-oss-120b", utility: "gpt-oss-20b", embedding: "bge-m3", dim: 1024 },
   openai: { chat: "gpt-5.5", utility: "gpt-5.4-mini", embedding: "text-embedding-3-small", dim: 1536 },
 } as const;
 const d = DEFAULTS[AI_PROVIDER ?? "openai"];
