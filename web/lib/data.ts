@@ -2,7 +2,7 @@ import "server-only";
 import { DEMO_MODE, hasServiceRole } from "./config";
 import * as demo from "./demo-data";
 import { createClient, createServiceClient } from "./supabase/server";
-import type { AdminAlert, Assessment, Message, MoodLog, Profile, Session } from "./types";
+import type { AdminAlert, AdminUser, Assessment, Message, MoodLog, Profile, Session } from "./types";
 
 // ───────── 사용자 ─────────
 
@@ -120,26 +120,86 @@ export async function listAlerts(): Promise<AdminAlert[]> {
   }));
 }
 
-export async function listUsers(): Promise<(Profile & { session_count: number; last_risk: string })[]> {
-  if (DEMO_MODE) return demo.demoUsers;
+// 로그인 계정 정보(이메일·가입 방식·마지막 로그인·정지 여부)는 auth.users 에만 있어서 서버 전용 키로 읽는다 (관리자 화면에서만 사용)
+type AuthInfo = Pick<AdminUser, "email" | "provider" | "last_sign_in_at" | "banned_until">;
+
+function toAuthInfo(u: { email?: string; app_metadata?: { provider?: string }; last_sign_in_at?: string; banned_until?: string }): AuthInfo {
+  return {
+    email: u.email ?? null,
+    provider: u.app_metadata?.provider ?? null,
+    last_sign_in_at: u.last_sign_in_at ?? null,
+    banned_until: u.banned_until ?? null,
+  };
+}
+
+const NO_AUTH: AuthInfo = { email: null, provider: null, last_sign_in_at: null, banned_until: null };
+
+export async function listUsers(): Promise<AdminUser[]> {
+  if (DEMO_MODE) return demo.demoUsers.map((d) => ({ ...NO_AUTH, provider: "email", ...d }));
   const supabase = await createClient();
   const { data } = await supabase
     .from("profiles")
     .select("*, sessions(risk_level, created_at)")
     .order("created_at", { ascending: false })
-    .limit(200);
-  // 이메일은 auth.users 에만 있어서 서버 전용 키로 읽는다 (관리자 화면에서만 사용)
-  const emails = new Map<string, string>();
+    .limit(1000);
+  const auth = new Map<string, AuthInfo>();
   if (hasServiceRole) {
     const { data: au } = await createServiceClient().auth.admin.listUsers({ perPage: 1000 });
-    for (const u of au?.users ?? []) if (u.email) emails.set(u.id, u.email);
+    for (const u of au?.users ?? []) auth.set(u.id, toAuthInfo(u));
   }
   return (data ?? []).map((p) => {
     const sessions = ((p as { sessions?: { risk_level: string; created_at: string }[] }).sessions ?? []).sort(
       (a, b) => b.created_at.localeCompare(a.created_at),
     );
-    return { ...(p as Profile), email: emails.get((p as Profile).id) ?? null, session_count: sessions.length, last_risk: sessions[0]?.risk_level ?? "-" };
+    const profile = p as Profile;
+    return { ...profile, ...(auth.get(profile.id) ?? NO_AUTH), session_count: sessions.length, last_risk: sessions[0]?.risk_level ?? "-" };
   });
+}
+
+export type AuditEntry = { id: number; action: string; created_at: string; admin_name: string | null };
+
+// 관리자: 사용자 한 명의 상세 (기본 정보 + 상담·기분·자가진단 + 이 사용자에 대한 관리 기록)
+export async function getUserDetail(id: string) {
+  if (DEMO_MODE) {
+    const d = demo.demoUsers.find((x) => x.id === id);
+    if (!d) return null;
+    const user: AdminUser = { ...NO_AUTH, provider: "email", ...d };
+    return { user, sessions: demo.demoSessions, moods: demo.demoMoods, assessments: demo.demoAssessments, audit: [] as AuditEntry[] };
+  }
+  const supabase = await createClient();
+  const { data: profile } = await supabase.from("profiles").select("*").eq("id", id).single();
+  if (!profile) return null;
+
+  let authInfo = NO_AUTH;
+  if (hasServiceRole) {
+    const { data } = await createServiceClient().auth.admin.getUserById(id);
+    if (data.user) authInfo = toAuthInfo(data.user);
+  }
+
+  const [sessions, moods, assessments, logs] = await Promise.all([
+    listSessions(id, 100),
+    listMoods(id, 90),
+    listAssessments(id),
+    supabase.from("admin_audit_logs").select("id, action, created_at, admin_id").eq("target_id", id).order("created_at", { ascending: false }).limit(30),
+  ]);
+
+  // 관리 기록에 관리자 이름 붙이기
+  const adminIds = [...new Set((logs.data ?? []).map((l) => l.admin_id as string))];
+  const names = new Map<string, string | null>();
+  if (adminIds.length) {
+    const { data: admins } = await supabase.from("profiles").select("id, nickname").in("id", adminIds);
+    for (const a of admins ?? []) names.set(a.id, a.nickname);
+  }
+  const audit: AuditEntry[] = (logs.data ?? []).map((l) => ({
+    id: l.id,
+    action: l.action,
+    created_at: l.created_at,
+    admin_name: names.get(l.admin_id) ?? null,
+  }));
+
+  const last = sessions[0];
+  const user: AdminUser = { ...(profile as Profile), ...authInfo, session_count: sessions.length, last_risk: last?.risk_level ?? "-" };
+  return { user, sessions, moods, assessments, audit };
 }
 
 export async function adminTopicCounts() {

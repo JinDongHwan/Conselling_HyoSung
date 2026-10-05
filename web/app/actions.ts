@@ -138,14 +138,57 @@ export async function logAdminView(sessionId: string) {
   await supabase.from("admin_audit_logs").insert({ admin_id: admin.id, action: "view_messages", target_id: sessionId });
 }
 
-export async function setUserRole(formData: FormData) {
-  await requireAdmin();
-  const id = String(formData.get("id"));
-  const role = formData.get("role") === "admin" ? "admin" : "user";
-  if (!DEMO_MODE && hasServiceRole) {
-    await createServiceClient().from("profiles").update({ role }).eq("id", id);
-  }
+// ───────── 관리자: 사용자 계정 관리 ─────────
+// 모든 작업은 관리 기록(admin_audit_logs)에 남긴다. 본인 계정과 다른 관리자 계정에는 위험한 작업을 막는다.
+
+type AdminResult = { ok?: true; error?: string };
+
+async function auditLog(adminId: string, action: string, targetId: string) {
+  const supabase = await createClient();
+  await supabase.from("admin_audit_logs").insert({ admin_id: adminId, action, target_id: targetId });
+}
+
+async function targetRole(userId: string) {
+  const { data } = await createServiceClient().from("profiles").select("role").eq("id", userId).single();
+  return data?.role as "user" | "admin" | undefined;
+}
+
+export async function adminSetRole(userId: string, role: "user" | "admin"): Promise<AdminResult> {
+  const admin = await requireAdmin();
+  if (DEMO_MODE || !hasServiceRole) return { error: "데모 모드에서는 사용할 수 없어요." };
+  // 본인 권한을 스스로 내리면 관리자가 한 명도 남지 않을 수 있어서 막는다
+  if (userId === admin.id) return { error: "본인 권한은 바꿀 수 없어요. 다른 관리자에게 요청해 주세요." };
+  const { error } = await createServiceClient().from("profiles").update({ role }).eq("id", userId);
+  if (error) return { error: `권한을 바꾸지 못했어요. (${error.message})` };
+  await auditLog(admin.id, `set_role:${role}`, userId);
   revalidatePath("/admin/users");
+  return { ok: true };
+}
+
+// 이용 정지: Supabase Auth의 ban 기능으로 로그인 자체를 막는다 (해제하면 다시 로그인 가능)
+export async function adminSetSuspended(userId: string, suspend: boolean): Promise<AdminResult> {
+  const admin = await requireAdmin();
+  if (DEMO_MODE || !hasServiceRole) return { error: "데모 모드에서는 사용할 수 없어요." };
+  if (userId === admin.id) return { error: "본인 계정은 정지할 수 없어요." };
+  if (suspend && (await targetRole(userId)) === "admin") return { error: "관리자 계정은 정지할 수 없어요. 먼저 권한을 사용자로 바꿔 주세요." };
+  const { error } = await createServiceClient().auth.admin.updateUserById(userId, { ban_duration: suspend ? "876000h" : "none" });
+  if (error) return { error: `${suspend ? "정지" : "정지 해제"}하지 못했어요. (${error.message})` };
+  await auditLog(admin.id, suspend ? "suspend_user" : "unsuspend_user", userId);
+  revalidatePath("/admin/users");
+  return { ok: true };
+}
+
+// 계정 삭제: 계정과 모든 상담·기분·자가진단 기록이 함께 삭제된다 (되돌릴 수 없음)
+export async function adminDeleteUser(userId: string): Promise<AdminResult> {
+  const admin = await requireAdmin();
+  if (DEMO_MODE || !hasServiceRole) return { error: "데모 모드에서는 사용할 수 없어요." };
+  if (userId === admin.id) return { error: "본인 계정은 마이페이지의 탈퇴하기로 삭제해 주세요." };
+  if ((await targetRole(userId)) === "admin") return { error: "관리자 계정은 삭제할 수 없어요. 먼저 권한을 사용자로 바꿔 주세요." };
+  const { error } = await createServiceClient().auth.admin.deleteUser(userId);
+  if (error) return { error: `삭제하지 못했어요. (${error.message})` };
+  await auditLog(admin.id, "delete_user", userId);
+  revalidatePath("/admin/users");
+  return { ok: true };
 }
 
 // 관리자: 비밀번호를 잊은 사용자에게 임시 비밀번호 발급 (화면에 한 번만 보여 주고 저장하지 않음)
@@ -166,7 +209,6 @@ export async function adminIssueTempPassword(userId: string): Promise<{ password
   const { error } = await createServiceClient().auth.admin.updateUserById(userId, { password });
   if (error) return { error: `임시 비밀번호를 만들지 못했어요. (${error.message})` };
 
-  const supabase = await createClient();
-  await supabase.from("admin_audit_logs").insert({ admin_id: admin.id, action: "issue_temp_password", target_id: userId });
+  await auditLog(admin.id, "issue_temp_password", userId);
   return { password };
 }

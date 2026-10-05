@@ -10,6 +10,7 @@ export async function POST(req: Request, ctx: RouteContext<"/api/sessions/[id]/e
   const { id } = await ctx.params;
   const profile = await getCurrentProfile();
   if (!profile) return new Response("로그인이 필요합니다.", { status: 401 });
+  if (profile.suspended) return new Response("이용이 정지된 계정이에요.", { status: 403 });
   const { mood } = (await req.json().catch(() => ({}))) as { mood?: number };
   if (DEMO_MODE) return Response.json({ ok: true });
 

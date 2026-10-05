@@ -8,6 +8,7 @@ import { createClient } from "@/lib/supabase/client";
 // Supabase 인증 오류를 이해하기 쉬운 문장으로 바꾼다. 모르는 오류는 원문(코드)을 함께 보여 준다.
 function authMessage(err: { message: string; code?: string; status?: number }, fallback: string) {
   const m = err.message.toLowerCase();
+  if (err.code === "user_banned" || m.includes("banned")) return "이용이 정지된 계정이에요. 자세한 내용은 홈페이지 맨 아래 문의 메일로 연락해 주세요.";
   if (err.code === "invalid_credentials" || m.includes("invalid login")) return "이메일 또는 비밀번호가 맞지 않아요.";
   if (err.code === "email_not_confirmed" || m.includes("not confirmed")) return "메일함의 인증 링크를 먼저 눌러 주세요.";
   if (err.code === "user_already_exists" || m.includes("already registered")) return "이미 가입된 이메일이에요. 로그인해 주세요.";

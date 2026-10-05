@@ -14,6 +14,16 @@ export type Profile = {
   terms_agreed_at?: string | null;
   privacy_agreed_at?: string | null;
   sensitive_agreed_at?: string | null;
+  suspended?: boolean; // 관리자가 이용을 정지한 계정 (Supabase Auth의 banned_until로 판단)
+};
+
+// 관리자 화면용: 프로필 + 로그인 계정 정보
+export type AdminUser = Profile & {
+  session_count: number;
+  last_risk: string;
+  provider: string | null; // "email" | "kakao"
+  last_sign_in_at: string | null;
+  banned_until: string | null;
 };
 
 export type Source = { title: string; category?: string; source_url?: string };

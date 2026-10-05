@@ -1,75 +1,106 @@
-import { setUserRole } from "@/app/actions";
+import Link from "next/link";
 import { PageHeader, RiskBadge } from "@/components/PageHeader";
-import { listUsers } from "@/lib/data";
-import { fmtDate } from "@/lib/format";
+import { isBanned } from "@/lib/auth";
 import { POLICY_VERSION } from "@/lib/company";
-import { TempPasswordButton } from "./TempPasswordButton";
+import { listUsers } from "@/lib/data";
+import { fmtDate, fmtDateTime, PROVIDER_LABEL } from "@/lib/format";
+import type { AdminUser } from "@/lib/types";
+import { StatusBadges } from "./StatusBadges";
+
+const FILTERS = [
+  { key: "all", label: "전체" },
+  { key: "admin", label: "관리자" },
+  { key: "suspended", label: "정지" },
+  { key: "high", label: "최근 위기" },
+  { key: "consent", label: "약관 재동의 필요" },
+] as const;
+type FilterKey = (typeof FILTERS)[number]["key"];
+
+const matchFilter: Record<FilterKey, (u: AdminUser) => boolean> = {
+  all: () => true,
+  admin: (u) => u.role === "admin",
+  suspended: (u) => isBanned(u.banned_until),
+  high: (u) => u.last_risk === "high",
+  consent: (u) => u.policy_version !== POLICY_VERSION,
+};
 
 export default async function UsersPage(props: PageProps<"/admin/users">) {
-  const { q } = await props.searchParams;
-  const query = typeof q === "string" ? q.trim() : "";
-  const users = (await listUsers()).filter((u) => !query || (u.nickname ?? "").includes(query) || (u.email ?? "").includes(query));
+  const { q, f } = await props.searchParams;
+  const query = typeof q === "string" ? q.trim().toLowerCase() : "";
+  const filter: FilterKey = FILTERS.some((x) => x.key === f) ? (f as FilterKey) : "all";
+
+  const all = await listUsers();
+  const users = all
+    .filter(matchFilter[filter])
+    .filter((u) => !query || (u.nickname ?? "").toLowerCase().includes(query) || (u.email ?? "").toLowerCase().includes(query));
+
+  const href = (key: FilterKey) => {
+    const sp = new URLSearchParams();
+    if (key !== "all") sp.set("f", key);
+    if (query) sp.set("q", query);
+    const s = sp.toString();
+    return `/admin/users${s ? `?${s}` : ""}`;
+  };
 
   return (
     <>
-      <PageHeader title="사용자 관리" description="상담 이용 현황과 최근 위험도를 확인해요. 대화 내용은 이 화면에 표시되지 않습니다." />
+      <PageHeader title="사용자 관리" description="이름을 누르면 상세 정보와 권한 변경·이용 정지·계정 삭제를 할 수 있어요." />
       <div className="mx-auto max-w-6xl px-4 py-6 sm:px-8">
         <form className="flex max-w-md gap-2">
+          {filter !== "all" && <input type="hidden" name="f" value={filter} />}
           <label htmlFor="q" className="sr-only">이름 또는 이메일 검색</label>
           <input id="q" name="q" defaultValue={query} placeholder="이름 또는 이메일로 찾기" className="flex-1 rounded-xl border border-line bg-surface px-4 py-2.5 outline-none focus:border-brand" />
           <button className="rounded-xl bg-dark px-5 text-sm font-semibold text-page">검색</button>
         </form>
 
-        <div className="mt-6 overflow-x-auto rounded-2xl border border-line bg-surface">
-          <table className="w-full min-w-[960px] text-left text-sm">
+        <nav aria-label="사용자 필터" className="mt-4 flex flex-wrap gap-2 text-sm">
+          {FILTERS.map((x) => {
+            const count = all.filter(matchFilter[x.key]).length;
+            const active = x.key === filter;
+            return (
+              <Link
+                key={x.key}
+                href={href(x.key)}
+                aria-current={active ? "page" : undefined}
+                className={`rounded-full border px-3.5 py-1.5 font-semibold ${active ? "border-brand bg-brand-soft text-brand-strong" : "border-line text-muted hover:border-brand"}`}
+              >
+                {x.label} <span className="tabular-nums">{count}</span>
+              </Link>
+            );
+          })}
+        </nav>
+
+        <div className="mt-4 overflow-x-auto rounded-2xl border border-line bg-surface">
+          <table className="w-full min-w-[900px] text-left text-sm">
             <thead className="border-b border-line text-muted">
               <tr>
                 <th className="px-5 py-3 font-medium">이름</th>
-                <th className="px-5 py-3 font-medium">이메일</th>
+                <th className="px-5 py-3 font-medium">이메일 · 가입 방식</th>
                 <th className="px-5 py-3 font-medium">가입일</th>
-                <th className="px-5 py-3 font-medium">출생연도</th>
+                <th className="px-5 py-3 font-medium">마지막 로그인</th>
                 <th className="px-5 py-3 text-right font-medium">상담 수</th>
                 <th className="px-5 py-3 font-medium">최근 위험도</th>
-                <th className="px-5 py-3 font-medium">약관 동의</th>
-                <th className="px-5 py-3 font-medium">원문 열람 동의</th>
-                <th className="px-5 py-3 font-medium">권한</th>
-                <th className="px-5 py-3 font-medium">비밀번호</th>
+                <th className="px-5 py-3 font-medium">상태</th>
+                <th className="px-5 py-3"><span className="sr-only">관리</span></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-line">
               {users.map((u) => (
-                <tr key={u.id}>
-                  <td className="px-5 py-3 font-medium">{u.nickname ?? "이름 없음"}</td>
-                  <td className="px-5 py-3 text-muted">{u.email ?? "카카오 계정"}</td>
+                <tr key={u.id} className="hover:bg-surface-2/60">
+                  <td className="px-5 py-3 font-medium">
+                    <Link href={`/admin/users/${u.id}`} className="hover:text-brand hover:underline">{u.nickname ?? "이름 없음"}</Link>
+                  </td>
+                  <td className="px-5 py-3 text-muted">
+                    {u.email ?? "-"}
+                    <span className="block text-xs">{PROVIDER_LABEL[u.provider ?? ""] ?? u.provider ?? ""}</span>
+                  </td>
                   <td className="px-5 py-3 text-muted">{fmtDate(u.created_at)}</td>
-                  <td className="px-5 py-3 text-muted">{u.birth_year ?? "-"}</td>
+                  <td className="px-5 py-3 text-muted">{u.last_sign_in_at ? fmtDateTime(u.last_sign_in_at) : "-"}</td>
                   <td className="px-5 py-3 text-right tabular-nums">{u.session_count}</td>
                   <td className="px-5 py-3"><RiskBadge risk={u.last_risk} /></td>
-                  <td className="px-5 py-3 text-muted">
-                    {u.terms_agreed_at ? (
-                      <>
-                        {fmtDate(u.terms_agreed_at)}
-                        <span className={`block text-xs ${u.policy_version === POLICY_VERSION ? "" : "text-accent"}`}>
-                          {u.policy_version === POLICY_VERSION ? "최신 버전" : `이전 버전 (${u.policy_version})`}
-                        </span>
-                      </>
-                    ) : (
-                      "기록 없음"
-                    )}
-                  </td>
-                  <td className="px-5 py-3">{u.consent_admin_view ? "동의" : <span className="text-muted">미동의</span>}</td>
-                  <td className="px-5 py-3">
-                    <form action={setUserRole} className="flex items-center gap-2">
-                      <input type="hidden" name="id" value={u.id} />
-                      <select name="role" defaultValue={u.role} aria-label={`${u.nickname} 권한`} className="rounded-md border border-line bg-surface px-2 py-1">
-                        <option value="user">사용자</option>
-                        <option value="admin">관리자</option>
-                      </select>
-                      <button className="text-xs font-semibold text-brand hover:underline">변경</button>
-                    </form>
-                  </td>
-                  <td className="px-5 py-3 align-top">
-                    {u.email ? <TempPasswordButton userId={u.id} label={u.nickname ?? u.email} /> : <span className="text-xs text-muted">해당 없음</span>}
+                  <td className="px-5 py-3"><StatusBadges user={u} /></td>
+                  <td className="px-5 py-3 text-right">
+                    <Link href={`/admin/users/${u.id}`} className="rounded-md border border-line px-2.5 py-1 text-xs font-semibold hover:border-brand">관리</Link>
                   </td>
                 </tr>
               ))}

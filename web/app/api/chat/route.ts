@@ -15,6 +15,7 @@ const order: Record<Risk, number> = { low: 0, mid: 1, high: 2 };
 export async function POST(req: Request) {
   const profile = await getCurrentProfile();
   if (!profile) return new Response("로그인이 필요합니다.", { status: 401 });
+  if (profile.suspended) return new Response("이용이 정지된 계정이에요.", { status: 403 });
 
   const { sessionId: incomingId, message, history = [], mood } = (await req.json()) as Body;
   const text = message?.trim();

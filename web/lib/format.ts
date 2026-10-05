@@ -24,3 +24,21 @@ export function greeting() {
   if (h < 17) return "오후도 잘 보내고 있나요";
   return "오늘 하루 수고 많았어요";
 }
+
+export const PROVIDER_LABEL: Record<string, string> = { email: "이메일", kakao: "카카오" };
+
+// 관리 기록(admin_audit_logs.action)을 사람이 읽는 말로
+export function auditLabel(action: string) {
+  const map: Record<string, string> = {
+    "set_role:admin": "관리자로 지정",
+    "set_role:user": "일반 사용자로 변경",
+    suspend_user: "이용 정지",
+    unsuspend_user: "정지 해제",
+    delete_user: "계정 삭제",
+    issue_temp_password: "임시 비밀번호 발급",
+    view_messages: "대화 원문 열람",
+  };
+  if (map[action]) return map[action];
+  if (action.startsWith("update_alert:")) return "위기 알림 처리";
+  return action;
+}

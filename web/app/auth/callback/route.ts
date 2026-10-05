@@ -13,5 +13,7 @@ export async function GET(request: Request) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) return NextResponse.redirect(`${origin}${safeNext}`);
   }
-  return NextResponse.redirect(`${origin}/login?error=auth`);
+  // 정지된 계정이면 Supabase가 code 대신 오류 설명을 보낸다
+  const banned = (searchParams.get("error_description") ?? "").toLowerCase().includes("banned");
+  return NextResponse.redirect(`${origin}/login?error=${banned ? "banned" : "auth"}`);
 }
