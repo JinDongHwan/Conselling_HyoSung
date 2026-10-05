@@ -1,5 +1,6 @@
 import { deleteAccount, saveProfile, signOut } from "@/app/actions";
 import { PageHeader, Panel } from "@/components/PageHeader";
+import { PasswordForm } from "@/components/PasswordForm";
 import { requireProfile } from "@/lib/auth";
 import { DEMO_MODE } from "@/lib/config";
 import { listSessions } from "@/lib/data";
@@ -73,6 +74,13 @@ export default async function MyPage() {
             {DEMO_MODE && <p className="mt-2 text-xs text-muted">데모 모드에서는 저장되지 않아요.</p>}
           </Panel>
         </form>
+
+        {profile.email && (
+          <Panel title="비밀번호 변경">
+            <p className="mb-4 text-sm text-muted">관리자에게 임시 비밀번호를 받았다면 여기서 새 비밀번호로 바꿔 주세요.</p>
+            {DEMO_MODE ? <p className="text-sm text-muted">데모 모드에서는 바꿀 수 없어요.</p> : <PasswordForm />}
+          </Panel>
+        )}
 
         <Panel title="계정">
           <form action={signOut}>

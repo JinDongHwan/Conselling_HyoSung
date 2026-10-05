@@ -3,7 +3,7 @@ import { DEMO_MODE } from "@/lib/config";
 import { LoginForm } from "./LoginForm";
 
 export default async function LoginPage(props: PageProps<"/login">) {
-  const { next } = await props.searchParams;
+  const { next, mode } = await props.searchParams;
   const target = typeof next === "string" && next.startsWith("/") && !next.startsWith("//") ? next : "/dashboard";
 
   return (
@@ -36,7 +36,7 @@ export default async function LoginPage(props: PageProps<"/login">) {
             </p>
           )}
           <div className="mt-8">
-            <LoginForm next={target} demo={DEMO_MODE} />
+            <LoginForm next={target} demo={DEMO_MODE} initialMode={mode === "reset" ? "reset" : mode === "signup" ? "signup" : "login"} />
           </div>
         </div>
       </section>

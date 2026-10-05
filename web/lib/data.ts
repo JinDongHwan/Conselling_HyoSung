@@ -1,7 +1,7 @@
 import "server-only";
-import { DEMO_MODE } from "./config";
+import { DEMO_MODE, hasServiceRole } from "./config";
 import * as demo from "./demo-data";
-import { createClient } from "./supabase/server";
+import { createClient, createServiceClient } from "./supabase/server";
 import type { AdminAlert, Assessment, Message, MoodLog, Profile, Session } from "./types";
 
 // ───────── 사용자 ─────────
@@ -128,11 +128,17 @@ export async function listUsers(): Promise<(Profile & { session_count: number; l
     .select("*, sessions(risk_level, created_at)")
     .order("created_at", { ascending: false })
     .limit(200);
+  // 이메일은 auth.users 에만 있어서 서버 전용 키로 읽는다 (관리자 화면에서만 사용)
+  const emails = new Map<string, string>();
+  if (hasServiceRole) {
+    const { data: au } = await createServiceClient().auth.admin.listUsers({ perPage: 1000 });
+    for (const u of au?.users ?? []) if (u.email) emails.set(u.id, u.email);
+  }
   return (data ?? []).map((p) => {
     const sessions = ((p as { sessions?: { risk_level: string; created_at: string }[] }).sessions ?? []).sort(
       (a, b) => b.created_at.localeCompare(a.created_at),
     );
-    return { ...(p as Profile), session_count: sessions.length, last_risk: sessions[0]?.risk_level ?? "-" };
+    return { ...(p as Profile), email: emails.get((p as Profile).id) ?? null, session_count: sessions.length, last_risk: sessions[0]?.risk_level ?? "-" };
   });
 }
 

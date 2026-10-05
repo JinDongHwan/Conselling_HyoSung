@@ -1,5 +1,6 @@
 "use server";
 
+import { randomInt } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getCurrentProfile, requireAdmin, requireProfile } from "@/lib/auth";
@@ -137,4 +138,27 @@ export async function setUserRole(formData: FormData) {
     await createServiceClient().from("profiles").update({ role }).eq("id", id);
   }
   revalidatePath("/admin/users");
+}
+
+// 관리자: 비밀번호를 잊은 사용자에게 임시 비밀번호 발급 (화면에 한 번만 보여 주고 저장하지 않음)
+const TEMP_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789"; // 헷갈리는 0 O 1 l I 제외
+
+function makeTempPassword() {
+  const pick = (n: number) => Array.from({ length: n }, () => TEMP_ALPHABET[randomInt(TEMP_ALPHABET.length)]).join("");
+  // 영문·숫자가 반드시 섞이도록 마지막에 숫자 2개를 붙인다 (예: Kp7wRt-mQ3xZn-48)
+  return `${pick(6)}-${pick(6)}-${randomInt(10, 100)}`;
+}
+
+export async function adminIssueTempPassword(userId: string): Promise<{ password?: string; error?: string }> {
+  const admin = await requireAdmin();
+  if (DEMO_MODE || !hasServiceRole) return { error: "데모 모드에서는 사용할 수 없어요." };
+  if (userId === admin.id) return { error: "본인 비밀번호는 마이페이지에서 바꿔 주세요." };
+
+  const password = makeTempPassword();
+  const { error } = await createServiceClient().auth.admin.updateUserById(userId, { password });
+  if (error) return { error: `임시 비밀번호를 만들지 못했어요. (${error.message})` };
+
+  const supabase = await createClient();
+  await supabase.from("admin_audit_logs").insert({ admin_id: admin.id, action: "issue_temp_password", target_id: userId });
+  return { password };
 }

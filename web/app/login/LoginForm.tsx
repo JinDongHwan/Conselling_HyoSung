@@ -16,9 +16,11 @@ function authMessage(err: { message: string; code?: string; status?: number }, f
   return `${fallback} (${err.code ?? err.status ?? ""} ${err.message})`;
 }
 
-export function LoginForm({ next, demo }: { next: string; demo: boolean }) {
+type Mode = "login" | "signup" | "reset";
+
+export function LoginForm({ next, demo, initialMode = "login" }: { next: string; demo: boolean; initialMode?: Mode }) {
   const router = useRouter();
-  const [mode, setMode] = useState<"login" | "signup">("login");
+  const [mode, setMode] = useState<Mode>(initialMode);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [adult, setAdult] = useState(false);
@@ -36,7 +38,15 @@ export function LoginForm({ next, demo }: { next: string; demo: boolean }) {
     if (mode === "signup" && !adult) return setError("만 19세 이상만 가입할 수 있어요.");
     setBusy(true);
     const supabase = createClient();
-    if (mode === "login") {
+    if (mode === "reset") {
+      // 메일의 링크 → /auth/callback 에서 로그인 처리 → /reset-password 에서 새 비밀번호 입력
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent("/reset-password")}`,
+      });
+      if (error) setError(authMessage(error, "재설정 메일을 보내지 못했어요."));
+      // 가입 여부를 알려 주지 않도록 항상 같은 안내를 보여 준다
+      else setNotice("가입된 이메일이라면 비밀번호 재설정 메일을 보냈어요. 메일의 링크를 눌러 새 비밀번호를 정해 주세요.");
+    } else if (mode === "login") {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) setError(authMessage(error, "이메일 또는 비밀번호가 맞지 않아요."));
       else router.push(next);
@@ -97,18 +107,37 @@ export function LoginForm({ next, demo }: { next: string; demo: boolean }) {
             className="mt-1 w-full rounded-xl border border-line bg-surface px-3.5 py-2.5 outline-none focus:border-brand"
           />
         </label>
-        <label className="block">
-          <span className="text-sm font-medium">비밀번호</span>
-          <input
-            type="password"
-            required={!demo}
-            minLength={8}
-            autoComplete={mode === "login" ? "current-password" : "new-password"}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="mt-1 w-full rounded-xl border border-line bg-surface px-3.5 py-2.5 outline-none focus:border-brand"
-          />
-        </label>
+        {mode === "reset" ? (
+          <p className="text-sm text-muted">가입한 이메일을 입력하면 비밀번호를 다시 정할 수 있는 링크를 보내 드려요.</p>
+        ) : (
+          <label className="block">
+            <span className="flex items-center justify-between text-sm font-medium">
+              비밀번호
+              {mode === "login" && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMode("reset");
+                    setError(null);
+                    setNotice(null);
+                  }}
+                  className="text-xs font-semibold text-brand hover:underline"
+                >
+                  비밀번호를 잊으셨나요?
+                </button>
+              )}
+            </span>
+            <input
+              type="password"
+              required={!demo}
+              minLength={8}
+              autoComplete={mode === "login" ? "current-password" : "new-password"}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="mt-1 w-full rounded-xl border border-line bg-surface px-3.5 py-2.5 outline-none focus:border-brand"
+            />
+          </label>
+        )}
         {mode === "signup" && (
           <label className="flex items-start gap-2 pt-1 text-sm">
             <input type="checkbox" checked={adult} onChange={(e) => setAdult(e.target.checked)} className="mt-0.5 accent-brand" />
@@ -124,17 +153,18 @@ export function LoginForm({ next, demo }: { next: string; demo: boolean }) {
           disabled={busy}
           className="w-full rounded-xl bg-brand px-4 py-3 font-semibold text-white hover:bg-brand-strong disabled:opacity-60"
         >
-          {mode === "login" ? "로그인" : "가입하기"}
+          {mode === "login" ? "로그인" : mode === "signup" ? "가입하기" : "재설정 메일 보내기"}
         </button>
       </form>
 
       <p className="mt-5 text-center text-sm text-muted">
-        {mode === "login" ? "처음이신가요?" : "이미 계정이 있나요?"}{" "}
+        {mode === "login" ? "처음이신가요?" : mode === "signup" ? "이미 계정이 있나요?" : "비밀번호가 기억나셨나요?"}{" "}
         <button
           type="button"
           onClick={() => {
             setMode(mode === "login" ? "signup" : "login");
             setError(null);
+            setNotice(null);
           }}
           className="font-semibold text-brand hover:underline"
         >
