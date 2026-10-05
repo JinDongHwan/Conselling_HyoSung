@@ -1,0 +1,18 @@
+# Vercel CLI 업로드 제외 — 비밀 정보와 로컬 파일
+*.txt
+*.xlsx
+*.xls
+*.pem
+.env
+.env.*
+**/.env
+**/.env.*
+!**/.env.example
+.git
+.agents
+.claude
+node_modules
+**/node_modules
+**/.next
+**/.vercel
+skills-lock.json

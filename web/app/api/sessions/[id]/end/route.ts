@@ -1,6 +1,6 @@
 import { getCurrentProfile } from "@/lib/auth";
 import { DEMO_MODE, hasAI, UTILITY_MODEL } from "@/lib/config";
-import { openai } from "@/lib/openai";
+import { describeAIError, openai } from "@/lib/openai";
 import { createClient } from "@/lib/supabase/server";
 
 const TOPICS = ["우울", "불안", "스트레스", "수면", "직장", "가족", "대인관계", "연애", "자존감", "무기력", "트라우마", "기타"];
@@ -51,7 +51,7 @@ export async function POST(req: Request, ctx: RouteContext<"/api/sessions/[id]/e
       });
       meta = JSON.parse(res.choices[0]?.message?.content ?? "{}");
     } catch (err) {
-      console.error("[session end] summary failed", err);
+      console.error("[session end] summary failed:", describeAIError(err));
     }
   }
 

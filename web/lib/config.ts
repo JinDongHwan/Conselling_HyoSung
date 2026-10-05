@@ -17,7 +17,8 @@ export const AI_PROVIDER: "hasa" | "openai" | null = HASA_KEY
     : null;
 export const hasAI = AI_PROVIDER !== null;
 
-export const AI_API_KEY = HASA_KEY ?? process.env.OPENAI_API_KEY;
+// 복사·붙여넣기로 섞인 공백·줄바꿈·"Bearer " 접두어 제거
+export const AI_API_KEY = (HASA_KEY ?? process.env.OPENAI_API_KEY)?.trim().replace(/^Bearer\s+/i, "");
 export const AI_BASE_URL =
   AI_PROVIDER === "hasa"
     ? (process.env.HASA_BASE_URL ?? "https://open.hasa.re.kr/v1")

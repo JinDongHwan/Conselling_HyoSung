@@ -24,3 +24,6 @@ github link.txt
 # OS
 .DS_Store
 Thumbs.db
+
+# Vercel 로컬 연결 정보
+.vercel/

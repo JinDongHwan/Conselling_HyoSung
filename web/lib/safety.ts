@@ -1,6 +1,6 @@
 import "server-only";
 import { hasAI, UTILITY_MODEL } from "./config";
-import { openai } from "./openai";
+import { describeAIError, openai } from "./openai";
 import type { Risk } from "./types";
 
 // 1차: 키워드 (모델 호출이 실패해도 항상 동작하는 하한선)
@@ -63,7 +63,7 @@ export async function assessRisk(message: string, recent: string[] = []): Promis
     const parsed = JSON.parse(res.choices[0]?.message?.content ?? "{}") as { risk?: Risk };
     return maxRisk(byKeyword, parsed.risk ?? "low");
   } catch (err) {
-    console.error("[safety] classifier failed, using keyword result", err);
+    console.error("[safety] classifier failed, using keyword result:", describeAIError(err));
     return byKeyword;
   }
 }

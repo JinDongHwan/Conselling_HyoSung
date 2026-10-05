@@ -1,6 +1,6 @@
 import { getCurrentProfile } from "@/lib/auth";
 import { CHAT_MODEL, DEMO_MODE, hasAI, hasServiceRole } from "@/lib/config";
-import { openai, openaiOnly } from "@/lib/openai";
+import { describeAIError, openai, openaiOnly } from "@/lib/openai";
 import { counselorSystemPrompt, CRISIS_REPLY, formatContext } from "@/lib/prompts";
 import { retrieve, toSources } from "@/lib/rag";
 import { assessRisk } from "@/lib/safety";
@@ -88,7 +88,7 @@ export async function POST(req: Request) {
     const system = counselorSystemPrompt({ tone: profile.tone_pref, nickname: profile.nickname, risk });
     const context = formatContext(chunks);
 
-    const completion = await openai().chat.completions.create({
+    const request = openai().chat.completions.create({
       model: CHAT_MODEL,
       stream: true,
       max_completion_tokens: 2000,
@@ -104,6 +104,7 @@ export async function POST(req: Request) {
       async start(c) {
         let full = "";
         try {
+          const completion = await request;
           for await (const part of completion) {
             const delta = part.choices[0]?.delta?.content;
             if (delta) {
@@ -112,8 +113,10 @@ export async function POST(req: Request) {
             }
           }
         } catch (err) {
-          console.error("[chat] stream failed", err);
-          const msg = "\n\n답변을 만드는 중에 연결이 끊겼어요. 마지막 메시지를 다시 보내 주세요.";
+          console.error("[chat] AI request failed:", describeAIError(err));
+          const msg = full
+            ? "\n\n답변을 만드는 중에 연결이 끊겼어요. 마지막 메시지를 다시 보내 주세요."
+            : "지금 AI 상담 연결이 원활하지 않아요. 잠시 후 다시 보내 주세요. 급하게 이야기 나눌 곳이 필요하면 자살예방상담전화 109(24시간)로 연락해 주세요.";
           full += msg;
           c.enqueue(encoder.encode(msg));
         }
