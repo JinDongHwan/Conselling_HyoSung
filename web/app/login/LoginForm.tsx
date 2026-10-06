@@ -25,7 +25,6 @@ export function LoginForm({ next, demo, initialMode = "login" }: { next: string;
   const [mode, setMode] = useState<Mode>(initialMode);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [adult, setAdult] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -37,7 +36,6 @@ export function LoginForm({ next, demo, initialMode = "login" }: { next: string;
     setError(null);
     setNotice(null);
     if (demo) return router.push(next);
-    if (mode === "signup" && !adult) return setError("만 19세 이상만 가입할 수 있어요.");
     setBusy(true);
     const supabase = createClient();
     if (mode === "reset") {
@@ -141,10 +139,9 @@ export function LoginForm({ next, demo, initialMode = "login" }: { next: string;
           </label>
         )}
         {mode === "signup" && (
-          <label className="flex items-start gap-2 pt-1 text-sm">
-            <input type="checkbox" checked={adult} onChange={(e) => setAdult(e.target.checked)} className="mt-0.5 accent-brand" />
-            <span>만 19세 이상입니다.</span>
-          </label>
+          <p className="rounded-lg bg-surface-2 px-3 py-2 text-xs leading-relaxed text-muted">
+            개인 가입은 만 19세 이상이에요. 학생은 가입한 뒤 다음 단계에서 학교·기관 가입 코드를 입력해요.
+          </p>
         )}
 
         {error && <p role="alert" className="text-sm text-danger">{error}</p>}

@@ -1,7 +1,8 @@
-import { getCurrentProfile } from "@/lib/auth";
+import { getCurrentProfile, guardianPending, needsOnboarding } from "@/lib/auth";
 import { CHAT_MODEL, DEMO_MODE, hasAI, hasServiceRole } from "@/lib/config";
 import { describeAIError, openai, openaiOnly } from "@/lib/openai";
-import { counselorSystemPrompt, CRISIS_REPLY, formatContext } from "@/lib/prompts";
+import { profileAgeBand } from "@/lib/age";
+import { counselorSystemPrompt, crisisReply, formatContext } from "@/lib/prompts";
 import { retrieve, toSources } from "@/lib/rag";
 import { assessRisk } from "@/lib/safety";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
@@ -16,6 +17,11 @@ export async function POST(req: Request) {
   const profile = await getCurrentProfile();
   if (!profile) return new Response("로그인이 필요합니다.", { status: 401 });
   if (profile.suspended) return new Response("이용이 정지된 계정이에요.", { status: 403 });
+  // 시작 설정(나이·약관 동의) 전이거나, 만 14세 미만인데 보호자 동의가 확인되지 않았으면 상담 불가
+  if (needsOnboarding(profile)) return new Response("시작 설정을 먼저 마쳐 주세요.", { status: 403 });
+  if (await guardianPending(profile)) return new Response("보호자 동의가 확인된 뒤에 상담할 수 있어요.", { status: 403 });
+  const band = profileAgeBand(profile);
+  const CRISIS_REPLY = crisisReply(band);
 
   const { sessionId: incomingId, message, history = [], mood } = (await req.json()) as Body;
   const text = message?.trim();
@@ -90,7 +96,7 @@ export async function POST(req: Request) {
     // 위기 대응 문서는 위험 신호(주의·위기)가 있을 때만 참고
     const chunks = await retrieve(searchQuery, { includeCrisis: risk !== "low" });
     sources = toSources(chunks);
-    const system = counselorSystemPrompt({ tone: profile.tone_pref, nickname: profile.nickname, risk });
+    const system = counselorSystemPrompt({ tone: profile.tone_pref, nickname: profile.nickname, risk, band });
     const context = formatContext(chunks);
 
     const request = openai().chat.completions.create({

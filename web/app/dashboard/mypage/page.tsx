@@ -6,10 +6,13 @@ import { requireProfile } from "@/lib/auth";
 import { DEMO_MODE } from "@/lib/config";
 import { listSessions } from "@/lib/data";
 import { fmtDate } from "@/lib/format";
+import { AGE_BAND_LABEL, GUARDIAN_STATUS_LABEL, profileAgeBand } from "@/lib/age";
+import { getOrg, latestGuardianConsent } from "@/lib/orgs";
 
 export default async function MyPage() {
   const profile = await requireProfile();
-  const sessions = await listSessions(profile.id, 200);
+  const [sessions, org, guardian] = await Promise.all([listSessions(profile.id, 200), getOrg(profile.org_id), latestGuardianConsent(profile.id)]);
+  const band = profileAgeBand(profile);
 
   return (
     <>
@@ -59,6 +62,7 @@ export default async function MyPage() {
               </div>
             </fieldset>
 
+            {band === "adult" && (
             <label className="mt-6 flex items-start gap-3 rounded-xl bg-surface-2 p-4">
               <input type="checkbox" name="consent_admin_view" defaultChecked={profile.consent_admin_view} className="mt-1 accent-brand" />
               <span className="text-sm">
@@ -68,6 +72,7 @@ export default async function MyPage() {
                 </span>
               </span>
             </label>
+            )}
 
             <button className="mt-6 rounded-xl bg-brand px-6 py-2.5 font-semibold text-white hover:bg-brand-strong">
               저장하기
@@ -83,7 +88,19 @@ export default async function MyPage() {
           </Panel>
         )}
 
-        <Panel title="약관 동의 내역">
+        <Panel title="가입 정보와 동의 내역">
+          <dl className="mb-4 grid grid-cols-[auto_1fr] gap-x-6 gap-y-1.5 text-sm">
+            <dt className="text-muted">나이 구간</dt>
+            <dd>{band ? AGE_BAND_LABEL[band] : "-"}</dd>
+            <dt className="text-muted">소속 기관</dt>
+            <dd>{org?.name ?? "개인 가입"}</dd>
+            {band === "under14" && (
+              <>
+                <dt className="text-muted">보호자 동의</dt>
+                <dd>{guardian ? GUARDIAN_STATUS_LABEL[guardian.status] : "요청 없음"}</dd>
+              </>
+            )}
+          </dl>
           <p className="text-sm">
             {profile.terms_agreed_at ? (
               <>

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { signOut } from "@/app/actions";
-import { AlertIcon, BookIcon, HomeIcon, ReportIcon, UsersIcon } from "@/components/icons";
+import { AlertIcon, BookIcon, BuildingIcon, HomeIcon, ReportIcon, ShieldCheckIcon, UsersIcon } from "@/components/icons";
 import { SideNav } from "@/components/SideNav";
 import { requireAdmin } from "@/lib/auth";
 
@@ -15,6 +15,8 @@ export default async function AdminLayout({ children }: LayoutProps<"/admin">) {
           { href: "/admin", label: "운영 현황", icon: <HomeIcon />, exact: true },
           { href: "/admin/alerts", label: "위기 알림", icon: <AlertIcon /> },
           { href: "/admin/users", label: "사용자 관리", icon: <UsersIcon /> },
+          { href: "/admin/orgs", label: "기관·가입 코드", icon: <BuildingIcon /> },
+          { href: "/admin/consents", label: "보호자 동의", icon: <ShieldCheckIcon /> },
           { href: "/admin/knowledge", label: "지식베이스", icon: <BookIcon /> },
           { href: "/admin/reports", label: "리포트", icon: <ReportIcon /> },
         ]}

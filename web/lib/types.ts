@@ -5,6 +5,8 @@ export type Profile = {
   email?: string | null;
   nickname: string | null;
   birth_year: number | null;
+  birth_date?: string | null; // "YYYY-MM-DD" (0003_age_policy.sql)
+  org_id?: string | null; // 기관 가입한 경우 소속 기관
   tone_pref: "warm" | "plain";
   role: "user" | "admin";
   consent_admin_view: boolean;
@@ -24,6 +26,48 @@ export type AdminUser = Profile & {
   provider: string | null; // "email" | "kakao"
   last_sign_in_at: string | null;
   banned_until: string | null;
+};
+
+export type OrgType = "office_of_education" | "school" | "youth_center" | "company" | "university" | "public" | "other";
+
+export type Organization = {
+  id: string;
+  name: string;
+  type: OrgType;
+  parent_id: string | null;
+  allow_minors: boolean;
+  allow_under14: boolean;
+  active: boolean;
+  created_at: string;
+};
+
+export type InviteCode = {
+  code: string;
+  org_id: string;
+  label: string | null;
+  expires_at: string | null;
+  max_uses: number | null;
+  used_count: number;
+  active: boolean;
+  created_at: string;
+};
+
+export type GuardianConsent = {
+  id: string;
+  user_id: string;
+  status: "requested" | "submitted" | "confirmed" | "rejected" | "withdrawn";
+  method: "online" | "paper" | null;
+  token: string | null;
+  token_expires_at: string | null;
+  guardian_name: string | null;
+  guardian_relation: string | null;
+  guardian_contact: string | null;
+  policy_version: string | null;
+  submitted_at: string | null;
+  confirmed_at: string | null;
+  confirmed_by: string | null;
+  memo: string | null;
+  created_at: string;
 };
 
 export type Source = { title: string; category?: string; source_url?: string };

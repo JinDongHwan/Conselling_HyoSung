@@ -37,8 +37,29 @@ export function auditLabel(action: string) {
     delete_user: "계정 삭제",
     issue_temp_password: "임시 비밀번호 발급",
     view_messages: "대화 원문 열람",
+    "guardian:confirmed": "보호자 동의 확인",
+    "guardian:rejected": "보호자 동의 거절 처리",
+    "guardian:withdrawn": "보호자 동의 철회 처리",
+    "guardian:paper": "서면 보호자 동의서 확인",
+    "guardian:new_link": "보호자 동의 링크 재발급",
+    create_org: "기관 등록",
+    update_org: "기관 설정 변경",
+    create_invite_code: "가입 코드 발급",
   };
   if (map[action]) return map[action];
   if (action.startsWith("update_alert:")) return "위기 알림 처리";
   return action;
 }
+
+export const ORG_TYPE_LABEL: Record<string, string> = {
+  office_of_education: "교육청",
+  school: "학교",
+  youth_center: "청소년상담복지센터",
+  company: "기업",
+  university: "대학",
+  public: "지자체·공공기관",
+  other: "기타",
+};
+
+// 날짜가 이미 지났는지 (만료 확인용)
+export const isPast = (iso: string | null | undefined) => Boolean(iso && new Date(iso).getTime() < Date.now());

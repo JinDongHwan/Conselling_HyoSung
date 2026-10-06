@@ -2,11 +2,14 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { LineChart } from "@/components/charts";
 import { PageHeader, Panel, RiskBadge } from "@/components/PageHeader";
+import { AGE_BAND_LABEL, ageOn, GUARDIAN_STATUS_LABEL, profileAgeBand } from "@/lib/age";
 import { bandOf } from "@/lib/assessments";
 import { isBanned, requireAdmin } from "@/lib/auth";
 import { POLICY_VERSION } from "@/lib/company";
 import { getUserDetail } from "@/lib/data";
-import { auditLabel, fmtDate, fmtDateTime, fmtShort, PROVIDER_LABEL } from "@/lib/format";
+import { auditLabel, fmtDate, fmtDateTime, fmtShort, ORG_TYPE_LABEL, PROVIDER_LABEL } from "@/lib/format";
+import { getOrg, latestGuardianConsent } from "@/lib/orgs";
+import { PaperConsentForm } from "../../consents/ConsentActions";
 import { StatusBadges } from "../StatusBadges";
 import { TempPasswordButton } from "../TempPasswordButton";
 import { UserActions } from "./UserActions";
@@ -18,6 +21,9 @@ export default async function AdminUserPage(props: PageProps<"/admin/users/[id]"
   const detail = await getUserDetail(id);
   if (!detail) notFound();
   const { user, sessions, moods, assessments, audit } = detail;
+  const [org, guardian] = await Promise.all([getOrg(user.org_id), latestGuardianConsent(user.id)]);
+  const band = profileAgeBand(user);
+  const age = user.birth_date ? ageOn(user.birth_date) : null;
   const name = user.nickname ?? user.email ?? "이름 없음";
   const suspended = isBanned(user.banned_until);
 
@@ -26,7 +32,12 @@ export default async function AdminUserPage(props: PageProps<"/admin/users/[id]"
     ["가입 방식", PROVIDER_LABEL[user.provider ?? ""] ?? user.provider ?? "-"],
     ["가입일", fmtDate(user.created_at)],
     ["마지막 로그인", user.last_sign_in_at ? fmtDateTime(user.last_sign_in_at) : "-"],
-    ["출생연도", user.birth_year ?? "시작 설정 전"],
+    ["생년월일", user.birth_date ? `${user.birth_date} (만 ${age}세)` : user.birth_year ? `${user.birth_year}년생` : "시작 설정 전"],
+    ["나이 구간", band ? AGE_BAND_LABEL[band] : "-"],
+    ["소속 기관", org ? `${org.name} (${ORG_TYPE_LABEL[org.type]})` : "개인 가입"],
+    ...(band === "under14"
+      ? ([["보호자 동의", guardian ? `${GUARDIAN_STATUS_LABEL[guardian.status]}${guardian.method === "paper" ? " · 서면" : guardian.method === "online" ? " · 온라인" : ""}` : "요청 없음"]] as [string, React.ReactNode][])
+      : []),
     ["상담 수", `${user.session_count}회`],
     [
       "약관 동의",
@@ -75,6 +86,16 @@ export default async function AdminUserPage(props: PageProps<"/admin/users/[id]"
             </div>
           )}
         </Panel>
+
+        {band === "under14" && guardian?.status !== "confirmed" && (
+          <Panel title="보호자 동의 확인 (만 14세 미만)" className="lg:col-span-2">
+            <p className="mb-4 text-sm text-muted">
+              보호자 동의가 확인되기 전에는 이 학생이 상담을 이용할 수 없어요. 온라인 제출 건은 <Link href="/admin/consents" className="text-brand underline">보호자 동의</Link> 메뉴에서 확인하고,
+              학교에서 받은 서면 동의서는 여기서 기록해 주세요.
+            </p>
+            <PaperConsentForm userId={user.id} />
+          </Panel>
+        )}
 
         <Panel title={`상담 기록 ${sessions.length}건`} className="lg:col-span-2">
           {sessions.length ? (

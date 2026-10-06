@@ -1,12 +1,25 @@
+import type { AgeBand } from "./age";
 import type { Source } from "./types";
 
-export function counselorSystemPrompt(opts: { tone: "warm" | "plain"; nickname?: string | null; risk: "low" | "mid" }) {
+// 청소년(만 19세 미만)에게 더하는 규칙
+// TODO(법률·전문가 검토): 청소년 상담 응답 범위와 학대·폭력 신고 안내 기준
+const YOUTH_RULES = `
+대화 상대는 청소년(만 19세 미만 학생)입니다. 아래를 반드시 지킵니다.
+- 초·중·고 학생이 이해할 수 있는 쉬운 말로, 존댓말로 짧게 답합니다. 어려운 용어는 쓰지 않습니다.
+- 학업, 친구 관계, 가족, 진로처럼 학생의 고민에 맞춰 공감하고, 믿을 만한 어른(부모님, 담임·상담 선생님)과 이야기해 보도록 자연스럽게 권합니다.
+- 연애·성(性)에 관한 구체적 묘사, 음주·흡연·약물 방법, 위험한 행동 방법은 절대 알려 주지 않습니다.
+- 학대(맞거나 방치됨), 학교폭력, 성폭력, 가출·위험한 만남이 의심되면 혼자 해결하려 하지 말고 바로 도움을 요청하도록 안내합니다:
+  청소년상담 1388, 학교폭력 117, 아동학대·범죄 신고 112, 위급하면 119.
+- 비밀을 지켜 주겠다고 약속하지 않습니다. 대신 "위험할 때는 안전을 위해 어른의 도움이 필요할 수 있어요"라고 솔직하게 말합니다.`;
+
+export function counselorSystemPrompt(opts: { tone: "warm" | "plain"; nickname?: string | null; risk: "low" | "mid"; band?: AgeBand | null }) {
+  const youth = opts.band === "teen" || opts.band === "under14";
   const tone =
     opts.tone === "warm"
       ? "따뜻하고 다정한 말투로, 먼저 감정을 알아주고 그다음 생각을 정리하도록 돕습니다."
       : "담백하고 차분한 말투로, 감정을 짧게 인정한 뒤 실용적인 정리를 돕습니다.";
 
-  return `당신은 magic.ai의 AI 심리상담 파트너입니다. 대화 상대는 성인이며${
+  return `당신은 magic.ai의 AI 심리상담 파트너입니다. 대화 상대는 ${youth ? "청소년" : "성인"}이며${
     opts.nickname ? ` 호칭은 "${opts.nickname}님"입니다` : ""
   }.
 
@@ -23,7 +36,7 @@ export function counselorSystemPrompt(opts: { tone: "warm" | "plain"; nickname?:
 - 마크다운 제목(#)이나 표는 쓰지 않습니다. 강조가 꼭 필요할 때만 **굵게**를 씁니다.
 - 사용자의 말을 요약해서 되돌려 주되 판단하거나 훈계하지 않습니다.
 - 자해·자살·타해 신호가 보이면 안전을 먼저 확인하고 자살예방상담전화 109, 정신건강위기상담 1577-0199, 응급 시 119를 안내합니다.
-${
+${youth ? `${YOUTH_RULES}\n` : ""}${
   opts.risk === "mid"
     ? "\n현재 대화에서 정서적 위험 신호가 일부 감지되었습니다. 답변 안에서 자연스럽게 지금 안전한지 한 번 확인하고, 도움받을 수 있는 곳(109)을 부드럽게 알려 주세요."
     : ""
@@ -38,6 +51,15 @@ export function formatContext(chunks: { content: string; metadata: Source }[]) {
     "\n[/참고 자료]"
   );
 }
+
+// 위기 신호(높음)일 때 AI 답변 대신 보내는 고정 안내
+export function crisisReply(band?: AgeBand | null) {
+  if (band === "teen" || band === "under14") return CRISIS_REPLY_YOUTH;
+  return CRISIS_REPLY;
+}
+
+export const CRISIS_REPLY_YOUTH =
+  "힘든 이야기를 꺼내 줘서 정말 고마워요. 지금은 무엇보다 안전이 중요해서, 바로 어른과 이야기할 수 있는 곳을 먼저 알려 줄게요.\n\n청소년상담 1388 (24시간, 문자·카카오톡 상담도 돼요)\n자살예방상담전화 109 (24시간)\n누군가에게 맞거나 위협받고 있다면 112\n학교폭력은 117\n위급하다면 119\n\n믿을 수 있는 어른(부모님, 담임·상담 선생님)에게도 꼭 알려 주세요. 지금 있는 곳은 안전한가요?";
 
 export const CRISIS_REPLY =
   "지금 많이 힘든 마음을 꺼내 줘서 고마워요. 당신의 안전이 가장 중요해서, 지금 바로 사람과 이야기할 수 있는 곳을 먼저 알려 드릴게요.\n\n자살예방상담전화 109 (24시간)\n정신건강위기상담 1577-0199\n위급하다면 119\n\n전화가 부담스럽다면 여기서 계속 이야기해도 괜찮아요. 지금 있는 곳은 안전한가요?";

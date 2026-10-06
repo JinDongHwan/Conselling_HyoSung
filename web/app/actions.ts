@@ -3,8 +3,8 @@
 import { randomInt } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { profileAgeBand } from "@/lib/age";
 import { getCurrentProfile, requireAdmin, requireProfile } from "@/lib/auth";
-import { POLICY_VERSION } from "@/lib/company";
 import { DEMO_MODE, hasServiceRole } from "@/lib/config";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 
@@ -25,34 +25,6 @@ export async function saveMood(formData: FormData) {
   revalidatePath("/dashboard");
 }
 
-export async function completeOnboarding(formData: FormData) {
-  const profile = await requireProfile();
-  const thisYear = new Date().getFullYear();
-  const birthYear = clampInt(formData.get("birth_year"), 1900, thisYear);
-  const agreedAll = ["agree_terms", "agree_privacy", "agree_sensitive"].every((k) => formData.get(k) === "on");
-  if (!birthYear || thisYear - birthYear < 19 || !agreedAll) {
-    redirect("/onboarding?error=1");
-  }
-  if (!DEMO_MODE) {
-    const supabase = await createClient();
-    const now = new Date().toISOString();
-    const basic = {
-      birth_year: birthYear,
-      nickname: String(formData.get("nickname") ?? "").slice(0, 20) || profile.nickname,
-      consent_admin_view: formData.get("consent_admin_view") === "on",
-    };
-    // 약관 동의 기록: 어떤 버전에 언제 동의했는지
-    const consent = { policy_version: POLICY_VERSION, terms_agreed_at: now, privacy_agreed_at: now, sensitive_agreed_at: now };
-    const { error } = await supabase.from("profiles").update({ ...basic, ...consent }).eq("id", profile.id);
-    if (error) {
-      // 동의 기록 칸이 아직 없으면(0002 미실행) 기본 정보만이라도 저장
-      console.error("[onboarding] consent save failed:", error.code, error.message);
-      await supabase.from("profiles").update(basic).eq("id", profile.id);
-    }
-  }
-  redirect("/dashboard");
-}
-
 export async function saveProfile(formData: FormData) {
   const profile = await requireProfile();
   if (DEMO_MODE) return;
@@ -63,7 +35,8 @@ export async function saveProfile(formData: FormData) {
     .update({
       nickname: String(formData.get("nickname") ?? "").slice(0, 20) || null,
       tone_pref: tone,
-      consent_admin_view: formData.get("consent_admin_view") === "on",
+      // 만 19세 미만은 관리자 원문 열람 동의를 받지 않는다
+      consent_admin_view: profileAgeBand(profile) === "adult" && formData.get("consent_admin_view") === "on",
     })
     .eq("id", profile.id);
   revalidatePath("/dashboard/mypage");

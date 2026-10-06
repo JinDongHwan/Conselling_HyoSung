@@ -11,7 +11,7 @@ type Msg = { role: "user" | "assistant"; content: string; sources?: Source[] };
 
 const STARTERS = ["요즘 잠을 잘 못 자요", "회사 일 때문에 너무 지쳐요", "사람 만나는 게 버거워요", "이유 없이 불안해요"];
 
-export function Chat({ nickname }: { nickname: string | null }) {
+export function Chat({ nickname, youth = false }: { nickname: string | null; youth?: boolean }) {
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
   const [sessionId, setSessionId] = useState<string | null>(null);
@@ -202,7 +202,7 @@ export function Chat({ nickname }: { nickname: string | null }) {
             ),
           )}
 
-          {risk !== "low" && <CrisisCard compact={risk === "mid"} />}
+          {risk !== "low" && <CrisisCard compact={risk === "mid"} youth={youth} />}
 
           {ending && (
             <div className="rounded-2xl border border-line bg-surface p-5">

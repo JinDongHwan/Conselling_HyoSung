@@ -35,7 +35,7 @@ export default async function LoginPage(props: PageProps<"/login">) {
             <Logo />
           </div>
           <h1 className="mt-8 text-3xl font-bold lg:mt-0">magic.ai 시작하기</h1>
-          <p className="mt-2 text-sm text-muted">만 19세 이상 성인만 이용할 수 있어요.</p>
+          <p className="mt-2 text-sm text-muted">개인 가입은 만 19세 이상이에요. 학생은 학교·기관에서 받은 가입 코드로 이용할 수 있어요.</p>
           {errorText && (
             <p role="alert" className="mt-4 rounded-lg bg-danger-soft px-3 py-2 text-sm text-danger">
               {errorText}

@@ -91,7 +91,7 @@ const TRUST: { icon: keyof typeof ICONS; title: string; desc: string }[] = [
   { icon: "book", title: "공공기관 자료 근거", desc: "국가정신건강정보포털 등 공공기관 자료를 정리해 답해요" },
   { icon: "shield", title: "위기 신호 우선 안내", desc: "위험 신호가 보이면 상담 번호부터 안내해요" },
   { icon: "lock", title: "대화 내용 보호", desc: "관리자는 위기 상황이거나 동의한 경우에만 대화를 확인해요" },
-  { icon: "adult", title: "만 19세 이상 성인 전용", desc: "성인을 위한 상담 공간으로 운영돼요" },
+  { icon: "adult", title: "나이에 맞는 보호", desc: "개인 가입은 만 19세 이상, 학생은 학교·기관을 통해 보호자 동의 절차와 함께 이용해요" },
 ];
 
 const WORRIES: { pose: MascotPose; tag: string; title: string; desc: string; quotes: string[] }[] = [
@@ -220,7 +220,7 @@ function Hero() {
             </Link>
           </div>
           <div className="mt-6 flex flex-wrap gap-x-5 gap-y-2 text-[15px] text-muted">
-            {["만 19세 이상 성인 전용", "위기 시 109 우선 안내"].map((t) => (
+            {["학교·기관 도입 가능", "위기 시 109 우선 안내"].map((t) => (
               <span key={t} className="inline-flex items-center gap-1.5">
                 <Icon name="check" className="size-[18px] text-brand-ink" strokeWidth={2.2} />
                 {t}

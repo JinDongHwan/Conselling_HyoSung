@@ -3,7 +3,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "magic.ai — 마음을 털어놓는 AI 상담",
-  description: "공공기관 정신건강 자료를 근거로 답하는 성인 대상 AI 심리상담 서비스",
+  description: "공공기관 정신건강 자료를 근거로 답하는 AI 심리상담 서비스 — 성인 개인과 학교·기관을 위한 마음 상담",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
